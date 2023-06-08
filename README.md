@@ -1,8 +1,8 @@
 # E-commerce App
 
-#### My Final Year Project.
+### My Final Year Project.
 
-### CONTACT BEFORE USING IT FOR COMMERCIAL PURPOSES
+## CONTACT BEFORE USING IT FOR COMMERCIAL PURPOSES
 
 ![image](https://github.com/cancakar35/e-commerce/assets/54742785/12cef60f-13dc-42bc-a314-bd686b44b081)
 ![image](https://github.com/cancakar35/e-commerce/assets/54742785/b44b8f8a-9d39-42f4-a93b-5220e5e2a2c1)
