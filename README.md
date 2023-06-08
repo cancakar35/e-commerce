@@ -6,7 +6,6 @@
 
 ![image](https://github.com/cancakar35/e-commerce/assets/54742785/12cef60f-13dc-42bc-a314-bd686b44b081)
 ![image](https://github.com/cancakar35/e-commerce/assets/54742785/b44b8f8a-9d39-42f4-a93b-5220e5e2a2c1)
-![image](https://github.com/cancakar35/e-commerce/assets/54742785/1aa44940-1a70-4668-a5cc-3619290f9112)
 ![image](https://github.com/cancakar35/e-commerce/assets/54742785/20c4cb0e-a899-4c53-8bab-1d84f923d4e6)
 ![image](https://github.com/cancakar35/e-commerce/assets/54742785/e6a9ee2c-64cb-4850-9e75-1274163318aa)
 ![image](https://github.com/cancakar35/e-commerce/assets/54742785/bad6a965-f106-4bca-8112-f0527a2a5e2e)
