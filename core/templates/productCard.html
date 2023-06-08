@@ -1,0 +1,23 @@
+{% load custom_tags %}
+<div class="product">
+    <div class="product-card">
+        <a href="{{product.get_absolute_url}}">
+            <div class="product-image">
+                {% with firstImage=product.get_first_image %}
+                <img src={{firstImage.image.url}} alt={{firstImage.alt_text}}>
+                {% endwith %}
+            </div>
+            <div class="product-card-body">
+                <div class="product-card-info">
+                    <span class="product-card-brand">{{product.brand}}</span>
+                    <span class="product-card-title">{{product.title}}</span>
+                </div>
+                <div class="product-card-price">
+                    <div class="card-price-container mstr-flex-row">
+                        <div class="card-final-price">{{product.get_vendor_list.0.get_final_price|formatDisplayPrice}} TL</div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>

@@ -1,0 +1,377 @@
+{% extends 'vendorBase.html' %}
+{% load custom_tags %}
+{% block title %}Ürün Listesi - MyStore{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    <div class="vendor-plist">
+        <div class="vendor-plist-header">
+            <div>
+                <button class="vendor-plist-filterBtn active" data-index="0">Tüm Ürünler</button>
+                <button class="vendor-plist-filterBtn" data-index="1">Satıştakiler</button>
+                <button class="vendor-plist-filterBtn" data-index="2">Tükenenler</button>
+                <button class="vendor-plist-filterBtn" data-index="3">Satışta Olmayanlar</button>
+            </div>
+            <div>
+                <a href="/satici/product/list/download" class="vendor-plist-excel" download>Excel İndir</a>
+            </div>
+        </div>
+        <div class="vendor-plist-order">
+            <div class="vendor-plist-search">
+                <input type="text" id="plist-searchBar" maxlength="255" placeholder="Ürün Adı Ara">
+                <button id="plist-BtnsearchBar"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </div>
+            <div class="plist-dropdown">
+                <button class="plist-drop-btn mstr-btn mstr-btn-secondary">
+                    <i class="fa fa-sort"></i>
+                    <span>&nbsp;Sırala</span>
+                </button>
+                <div class="plist-drop-content">
+                    <button class="plist-sort-btn" data-index="0">En düşük fiyat</button>
+                    <button class="plist-sort-btn" data-index="1">En yüksek fiyat</button>
+                    <button class="plist-sort-btn" data-index="2">Tarih en yeni</button>
+                    <button class="plist-sort-btn" data-index="3">Tarih en eski</button>
+                </div>
+            </div>
+        </div>
+        <div class="vendor-plist-content">
+            <div class="vendor-plist-product header">
+                <div>Resim</div>
+                <div>Ürün Bilgisi</div>
+                <div>Satış Fiyatı</div>
+                <div>Piyasa Fiyatı</div>
+                <div>Son Güncelleme</div>
+                <div>Stok</div>
+                <div class="plist-product-actions"></div>
+            </div>
+            {% for prd in products %}
+            <div class="vendor-plist-product" data-index="{{prd.id}}">
+                <div class="plist-product-image">
+                    <img src="{{prd.product.get_first_image.image.url}}">
+                </div>
+                <div>
+                    <span>{{prd.product.brand}} {{prd.product.title}}</span>
+                </div>
+                <div>
+                    {{prd.get_final_price|formatDisplayPrice}} TL
+                </div>
+                <div>
+                    {{prd.product.get_vendor_list.0.get_final_price|formatDisplayPrice}} TL
+                </div>
+                <div>
+                    {{prd.modified_at}}
+                </div>
+                <div>
+                    <button class="plist-updateStockBtn" data-index="{{prd.id}}">Stok Güncelle</button>
+                </div>
+                <div class="plist-product-actions">
+                    <button class="icon-edit-item" data-index="{{prd.id}}">
+                        <i class="fa fa-pen-to-square"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="modal-background" id="edit-product-modal">
+        <div class="edit-prd-modal-content">
+            <div class="edit-prd-modal-header">
+                <span class="close-modal" id="editCloseModal">&times;</span>
+            </div>
+            <div class="edit-prd-modal-body">
+                <div class="mstr-flex-col">
+                    <label for="newPrice">Fiyat</label>
+                    <input type="number" inputmode="numeric" step=".01" name="newPrice" id="prdNewPrice" min="0.01">
+                </div>
+                <div class="mstr-flex-col">
+                    <label for="newDiscount">İndirim</label>
+                    <select name="newDiscount" id="prdNewDiscount">
+                        <option value="YOK">YOK</option>
+                        {% for disc in discounts %}
+                        <option value="{{disc.id}}">{{disc}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mstr-flex-col">
+                    <label class="prd-sale-active">
+                        <input type="checkbox" id="saleActive" name="saleActive" checked>
+                        <span>Satışta</span>
+                    </label>
+                </div>
+                <button class="profile-form-button" id="btnEditProduct">GÜNCELLE</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-background" id="update-stock-modal">
+        <div class="update-stock-modal-content">
+            <div class="updateStock-modal-header">
+                <h5>Stok Güncelle</h5>
+                <span class="close-modal" id="updateStockClose">&times;</span>
+            </div>
+            <div class="updateStock-modal-body">
+                <div class="vndUpdateStock-specList">
+                    <div id="specListHeader"></div>
+                </div>
+                <div class="vndAddProduct-newSpecList">
+                    <button id="newSpecList" type="button"><i class="fa fa-plus"></i></button>
+                </div>
+                <button class="mstr-btn mstr-btn-primary form-sbmt-button" id="btnUpdateStock" type="button">GÜNCELLE</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block body_script %}
+<script>
+    const editModal = document.getElementById("edit-product-modal");
+    const updateStockModal = document.getElementById("update-stock-modal");
+    const prdNewPrice = document.getElementById("prdNewPrice");
+    const prdNewDiscount = document.getElementById("prdNewDiscount");
+    const saleActive = document.getElementById("saleActive");
+    const searchBar = document.getElementById("plist-searchBar");
+    const specListHeader = document.getElementById("specListHeader");
+    const newSpecListBtn = document.getElementById("newSpecList");
+    const options = {
+        day:"numeric",
+        month:"long",
+        year:"numeric",
+        hour:"numeric",
+        minute:"numeric"
+    }
+    let specListSelect = [];
+    let specvalues = [];
+    function updateTable(json) {
+        for (const data of json.data) {
+            $(".vendor-plist-content").append($('<div class="vendor-plist-product" data-index="'+data.index+'"><div class="plist-product-image">\
+                <img src="'+data.image+'"></div><div><span>'+data.title+'</span></div>\
+                <div>'+formatDisplayPrice(data.price)+' TL</div><div>'+formatDisplayPrice(data.minprice)+' TL</div>\
+                <div>'+(new Date(data.date)).toLocaleString('tr-TR',options)+'</div>\
+                <div><button class="plist-updateStockBtn" data-index="'+data.index+'">Stok Güncelle</button></div>\
+                <div class="plist-product-actions"><button class="icon-edit-item" data-index="'+data.index+'"><i class="fa fa-pen-to-square"></i></button></div></div>'));
+        }
+    }
+    $(".plist-sort-btn").on('click', function (event) {
+        $('.vendor-plist-product:not(.header)').remove();
+        $.ajax({
+            type: 'POST',
+            url: '/satici/product/list',
+            data: {
+                sort: $(this).data("index"),
+                index: $('.vendor-plist-filterBtn.active').data("index"),
+                csrfmiddlewaretoken: "{{csrf_token}}"
+            },
+            success: function (json) {
+                updateTable(json);
+            },
+            error: function (xhr, errmsg, err) {
+                alert("Hata oluştu.");
+            }
+        });
+    });
+    $(".vendor-plist-filterBtn").on('click', function (event) {
+        $(".vendor-plist-filterBtn.active").removeClass("active");
+        $(this).addClass("active");
+        $('.vendor-plist-product:not(.header)').remove();
+        $.ajax({
+            type: 'POST',
+            url: '/satici/product/list',
+            data: {
+                index: $(this).data("index"),
+                csrfmiddlewaretoken: "{{csrf_token}}"
+            },
+            success: function (json) {
+                updateTable(json);
+            },
+            error: function (xhr, errmsg, err) {
+                alert("Hata oluştu.");
+            }
+        });
+    });
+    $(".vendor-plist-content").on("click", ".icon-edit-item", async function (event) {
+        editModal.dataset.index = $(this).data("index");
+        let response = await fetch("/satici/product/edit/"+this.dataset.index);
+        if (response.ok){
+            let data = await response.json();
+            prdNewPrice.value = data.price;
+            prdNewDiscount.value = data.discount;
+            saleActive.checked = data.is_active ? true : false;
+            editModal.style.display = "block";
+        }
+        else {
+            alert("Hata oluştu!")
+        }
+    });
+    document.getElementById("editCloseModal").addEventListener('click', function (event) {
+        editModal.style.display = "none";
+    });
+    prdNewPrice.addEventListener('change', function (event) {
+        if(prdNewPrice.value < 0 || prdNewPrice.value == '') {
+            prdNewPrice.value = 0;
+        }
+    });
+    document.getElementById("btnEditProduct").addEventListener("click", function () {
+        $.ajax({
+            type: "POST",
+            url: "/satici/product/edit/"+editModal.dataset.index,
+            data: {
+                newPrice: prdNewPrice.value,
+                newDiscount: prdNewDiscount.value,
+                saleActive: saleActive.checked,
+                csrfmiddlewaretoken: "{{csrf_token}}"
+            },
+            success: function (json) {
+                let filter = $('.vendor-plist-filterBtn.active').data("index");
+                if (json.active && filter == "3") {
+                    $('.vendor-plist-product[data-index="'+editModal.dataset.index+'"]').remove();
+                }
+                else if (!json.active && filter == "1") {
+                    $('.vendor-plist-product[data-index="'+editModal.dataset.index+'"]').remove();
+                }
+                else {
+                    $('.vendor-plist-product[data-index="'+editModal.dataset.index+'"] div:nth-child(3)').html(formatDisplayPrice(json.price));
+                    $('.vendor-plist-product[data-index="'+editModal.dataset.index+'"] div:nth-child(5)').html((new Date(json.date)).toLocaleString('tr-TR',options));
+                }
+                editModal.style.display = "none";
+            },
+            error: function (xhr, errmsg, err) {
+                alert("Hata oluştu.");
+            }
+        });
+    });
+    function plistSearch() {
+        $('.vendor-plist-product:not(.header)').remove();
+        $.ajax({
+            type: 'POST',
+            url: '/satici/product/list',
+            data: {
+                index: $('.vendor-plist-filterBtn.active').data("index"),
+                search: searchBar.value,
+                csrfmiddlewaretoken: "{{csrf_token}}"
+            },
+            success: function (json) {
+                updateTable(json);
+            },
+            error: function (xhr, errmsg, err) {
+                alert("Hata oluştu.");
+            }
+        });
+    }
+    document.getElementById("plist-BtnsearchBar").addEventListener("click", function (event) {
+        plistSearch();
+    });
+    searchBar.addEventListener("keyup", function (event) {
+        if (event.key=="Enter"){
+            plistSearch();
+        }
+    });
+    function newSpecSelectLine(values) {
+        let specDiv = document.createElement("div");
+        specDiv.className = "vndAddProduct-specListSelect";
+        specListSelect.push(specDiv);
+        $(".vndUpdateStock-specList").append(specDiv);
+        let selectValues = [];
+        if (values && typeof(values[0]) == "string") {
+            selectValues = values[0].split("-");
+        }
+        for (let i = 0; i < specvalues.length; i++) {
+            let select = document.createElement("select");
+            specvalues[i].forEach(spec => {
+                    let opt = document.createElement("option");
+                    opt.value = spec;
+                    opt.text = spec;
+                    select.add(opt);
+            });
+            if (selectValues){
+                select.value = selectValues[i];
+            }
+            specDiv.appendChild(select);
+        }
+        let inp = document.createElement("input");
+        inp.type = "number";
+        inp.min = "0";
+        if (values) {
+            inp.value = values[1];
+        }
+        else {
+            inp.value = "0";
+        }
+        specDiv.appendChild(inp);
+    }
+    document.getElementById("updateStockClose").addEventListener("click", function (event) {
+        updateStockModal.style.display = "none";
+    });
+    $(".vendor-plist-content").on("click", ".plist-updateStockBtn", async function (event) {
+        specListHeader.innerHTML = "";
+        $(".vndUpdateStock-specList > *").not(":first-child").remove();
+        specvalues = [];
+        specListSelect = [];
+        let response = await fetch("/satici/product/stock/"+this.dataset.index);
+        if (response.ok){
+            let data = await response.json();
+            if (Object.values(data["specs"]).length) {
+                newSpecListBtn.style.display = "block";
+                for (const [key,value] of Object.entries(data["specs"])) {
+                    let div = document.createElement("div");
+                    div.innerHTML = key;
+                    specListHeader.appendChild(div);
+                    specvalues.push(value);
+                }
+                let div = document.createElement("div");
+                div.innerHTML = "Stok";
+                specListHeader.appendChild(div);
+                for (const stock of Object.entries(data["stock"])){
+                    newSpecSelectLine(stock);
+                }
+            }
+            else {
+                newSpecListBtn.style.display = "none";
+                let div = document.createElement("div");
+                div.innerHTML = "Stok";
+                specListHeader.appendChild(div);
+                let inp = document.createElement("input");
+                inp.id = "updateSingleStock";
+                inp.type = "number";
+                inp.min = "0";
+                inp.step = "1";
+                inp.required = true;
+                inp.value = data["stock"][""];
+                $(".vndUpdateStock-specList").append(inp);
+            }
+        }
+        updateStockModal.dataset.index = this.dataset.index;
+        updateStockModal.style.display = "block";
+    });
+    newSpecListBtn.addEventListener("click", function (event) {
+        newSpecSelectLine();
+    });
+    document.getElementById("btnUpdateStock").addEventListener("click", function (event) {
+        let specData = {};
+        if (!specListSelect.length) {
+            specData[""] = parseInt(document.getElementById("updateSingleStock").value,10);
+        }
+        else {
+            for (const spec of specListSelect) {
+                specData[$(spec).children().not(":last-child").map(function(){return $(this).val();}).get().join("-")] = parseInt(spec.lastChild.value,10);
+            }
+        }
+        $.ajax({
+            type: "POST",
+            url: "/satici/product/stock/update",
+            data: {
+                index: updateStockModal.dataset.index,
+                stock: JSON.stringify(specData),
+                csrfmiddlewaretoken: "{{csrf_token}}"
+            },
+            success: function (json) {
+                $(".vndUpdateStock-specList > *").not(":first-child").remove();
+                specvalues = [];
+                specListSelect = [];
+                $('.vendor-plist-product[data-index="'+updateStockModal.dataset.index+'"] div:nth-child(5)').html((new Date(json.date)).toLocaleString('tr-TR',options));
+                updateStockModal.style.display = "none";
+            },
+            error: function (xhr, errmsg, err) {
+                alert("Hata oluştu.");
+            }
+        });
+    });
+</script>
+{% endblock body_script %}

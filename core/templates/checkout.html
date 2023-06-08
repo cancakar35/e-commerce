@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load custom_tags %}
+{% block title %}Ödeme - MyStore{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    <div class="cart-flex">
+        <div class="checkout-info">
+            <div class="shipping-address">
+                <h4>Teslimat Adresi</h4>
+                <div class="add-address-button">
+                    <i class="fa fa-plus"></i>
+                    <span>Yeni Adres Ekle</span>
+                </div>
+                <div class="address-content">
+                    {% for adres in request.user.user_account.get_addresses %}
+                        <div class="mstr-flex-col ch-address-item" data-index="{{adres.id}}">
+                            <span>{{adres.title}}</span>
+                            <span>{{adres.name}} {{adres.lastname}}</span>
+                            <span>{{adres.address}}</span>
+                            <span>{{adres.district}}/{{adres.city}}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="billing-address">
+                <h4>Fatura Adresi</h4>
+                <div class="add-address-button">
+                    <i class="fa fa-plus"></i>
+                    <span>Yeni Adres Ekle</span>
+                </div>
+                <div class="bill-address-content">
+                    {% for adres in request.user.user_account.get_addresses %}
+                        <div class="mstr-flex-col ch-bill-address-item" data-index="{{adres.id}}">
+                            <span>{{adres.title}}</span>
+                            <span>{{adres.name}} {{adres.lastname}}</span>
+                            <span>{{adres.address}}</span>
+                            <span>{{adres.district}}/{{adres.city}}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <label class="bill-check-label">
+                <input type="checkbox" id="billingCheck" checked>
+                <span>Fatura adresim teslimat adresimle aynı</span>
+            </label>
+            <div class="payment">
+                <h4>Ödeme</h4>
+                <div class="mstr-flex-row mstr-space-between">
+                    <form method="POST" name="checkoutForm" class="checkoutForm" id="paymentForm">
+                        {% csrf_token %}
+                        <div class="mstr-flex-col">
+                            <label>Kart Üzerindeki İsim</label>
+                            <input type="text" name="cc-name" id="cardHolder" maxlength="64" required>
+                        </div>
+                        <div class="mstr-flex-col">
+                            <label>Kart Numarası</label>
+                            <input type="text" inputmode="numeric" name="cc-number" id="cardNo" maxlength="19" required>
+                        </div>
+                        <div class="mstr-flex-row">
+                            <div class="mstr-flex-col">
+                                <label>Son Kullanma Tarihi</label>
+                                <input type="text" inputmode="numeric" name="cc-exp" id="cardExp" maxlength="5" placeholder="AA / YY" required>
+                            </div>
+                            <div class="mstr-flex-col">
+                                <label>Güvenlik Kodu</label>
+                                <input type="text" inputmode="numeric" name="cc-cvc" id="cardSec" maxlength="4" placeholder="CVC" required>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="cart-totals-sticky">
+            <div class="cart-summary">
+              <div class="cart-totals">
+                <h1>Sipariş Özeti</h1>
+                <div class="total-item">
+                  <span>Alt Toplam:</span>
+                  <span id="subtotal-price" class="cart-price-display">{{cart.get_total_cost|formatDisplayPrice}} TL</span>
+                </div>
+                <div class="total-item">
+                  <span>Kargo</span>
+                  <span id="delivery-price" class="cart-price-display">0,00 TL</span>
+                </div>
+                <hr>
+                <div class="total-item">
+                  <span>Toplam</span>
+                  <span id="cart-final-price" class="cart-price-display">{{cart.get_total_cost|formatDisplayPrice}} TL</span>
+                </div>
+              </div>
+              <button type="submit" class="cart-btn-approve" id="ch-btn-approve">SİPARİŞİ ONAYLA</a>
+            </div>
+        </div>
+        {% include "addressModal.html" with next="/checkout" %}
+    </div>
+</div>
+{% endblock content %}
+{% block body_script %}
+<script>
+    const modal = document.getElementById('addressModal');
+    const closeModal = document.getElementById('addressCloseModal');
+    const addressPhone = document.getElementById('address_phone_input');
+    const addressTckn = document.getElementById('addressTckn');
+    const cardName = document.getElementById('cardHolder');
+    const cardNo = document.getElementById('cardNo');
+    const cardExp = document.getElementById('cardExp');
+    const cardCVV = document.getElementById('cardSec');
+    const billingCheck = document.getElementById("billingCheck");
+    addressPhone.addEventListener('keydown', enforceFormat);
+    addressTckn.addEventListener('keydown', forceNumericInput);
+    cardExp.onkeydown = function (event) {
+        if (!(event.key >= 0 && event.key <= 9) && !isModifierKey(event)) {
+            event.preventDefault();
+        }
+    }
+    cardExp.onkeyup = function (event) {
+        event.target.value = cc_expires_format(event.target.value)
+    }
+    cardNo.onkeydown = function (event) {
+        if (!(event.key >= 0 && event.key <= 9) && !isModifierKey(event)) {
+            event.preventDefault();
+        }
+    }
+    cardCVV.onkeydown = function (event) {
+        if (!(event.key >= 0 && event.key <= 9) && !isModifierKey(event)) {
+            event.preventDefault();
+        }
+    }
+    cardNo.onkeyup = function (event) {
+        if (event.target.value != "")
+        {
+            event.target.value = event.target.value.replace(/\W/gi, '').match(/(.{1,4})/g).join(" ");
+        }
+    }
+    closeModal.onclick = function () {
+        modal.style.display = 'none';
+    }
+    function ValidateForm() {
+        let errMessage = document.getElementById("errorMessage");
+        if (!checkPhoneNumber(addressPhone.value)){
+            errMessage.style.display = "inline-block";
+            errMessage.innerHTML = "Telefon numarası yanlış biçimde girildi!";
+            return false;
+        }
+        return true;
+    }
+    $('form[name="addressModalForm"]').on('input', function (){
+        $('#addressButton').prop('disabled',false);
+    });
+    $('.add-address-button').on('click', function (event) {
+        event.preventDefault();
+        modal.style.display = 'block';
+    });
+    document.getElementsByClassName("ch-address-item")[0].classList.add("selected");
+    document.getElementsByClassName("ch-bill-address-item")[0].classList.add("selected");
+    $(".ch-address-item").on('click', function (event) {
+        event.preventDefault();
+        if (!$(this).hasClass("selected")){
+            $(".ch-address-item.selected").removeClass("selected");
+            $(this).addClass("selected");
+        }
+    });
+    $(".ch-bill-address-item").on('click', function (event) {
+        event.preventDefault();
+        if (!$(this).hasClass("selected")){
+            $(".ch-bill-address-item.selected").removeClass("selected");
+            $(this).addClass("selected");
+        }
+    });
+    billingCheck.addEventListener('change', (event) => {
+        if (event.currentTarget.checked) {
+            document.getElementsByClassName('billing-address')[0].style.display = "none";
+        }
+        else {
+            document.getElementsByClassName('billing-address')[0].style.display = "block";
+        }
+    });
+
+    document.getElementById("ch-btn-approve").onclick = function (event) {
+        let teslimat = $('.ch-address-item.selected').first().data("index");
+        let fatura = billingCheck.checked ? teslimat : $('.ch-bill-address-item.selected').first().data("index");
+        $("<input />").attr("type", "hidden").attr("name", "shippingAddr").attr("value", teslimat).appendTo("#paymentForm");
+        $("<input />").attr("type", "hidden").attr("name", "billingAddr").attr("value", fatura).appendTo("#paymentForm");
+        if (cardNo.value != "" && cardExp.value !="" && cardName.value != "" && cardCVV.value != "")
+        {
+            document.getElementById("paymentForm").submit();
+        }
+    }
+</script>
+{% endblock body_script %}

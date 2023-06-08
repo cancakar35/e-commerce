@@ -1,0 +1,74 @@
+<nav class="mstr-navbar">
+    <div class="mstr-nav-left">
+      <a class="mstr-nav-brand" href="/">MyStore</a>
+    </div>
+    <form action="/search" method="GET" autocomplete="off">
+      <div class="mstr-nav-search">
+          <input type="text" class="nav-search-input" placeholder="Ürün, kategori veya marka ara" name="q">
+          <button class="nav-search-btn">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+      </div>
+    </form>
+    <div class="mstr-nav-right">
+      {% if request.user.is_authenticated and request.user.is_user %}
+        <div class="mstr-nav-dropdown">
+          <button class="nav-drop-btn mstr-btn mstr-btn-primary">
+            <i class="fa fa-user"></i>
+            <span>&nbsp Hesabım</span>
+          </button>
+          <div class="nav-drop-content">
+            <a href="/profile/orders"><i class="fa fa-box fa-fw"></i>&nbsp Siparişlerim</a>
+            <a href="/profile/favs"><i class="fa fa-heart fa-fw"></i>&nbsp Favorilerim</a>
+            <a href="/profile"><i class="fa fa-user-gear fa-fw"></i>&nbsp Kullanıcı Bilgilerim</a>
+            <a href="/logout"><i class="fa fa-arrow-right-from-bracket fa-fw"></i>&nbsp Çıkış Yap</a>
+          </div>
+        </div>
+      
+      {% else %}
+        <div class="mstr-nav-dropdown">
+          <button class="nav-drop-btn mstr-btn mstr-btn-primary">
+            <i class="fa fa-user"></i>
+            <span>&nbsp Giriş Yap</span>
+          </button>
+          <div class="nav-drop-content">
+            <a href="/login">Giriş Yap</a>
+            <a href="/register">Kayıt Ol</a>
+          </div>
+        </div>
+      {% endif %}
+      <a class="mstr-btn mstr-btn-secondary" href="/cart">
+        <i class="fa fa-cart-shopping"></i>
+        <span>&nbsp Sepetim</span>
+      </a>
+    </div>
+</nav>
+
+
+<nav class="mstr-mobile-nav-brand">
+  <a class="mstr-nav-brand" href="/">MyStore</a>
+</nav>
+
+<nav class="mstr-mobile-nav">
+  <a class="mobile-nav-link" href="/">
+    <i class="fa fa-house"></i>
+  </a>
+  <a class="mobile-nav-link" href="#">
+    <i class="fa fa-list-ul"></i>
+  </a>
+  <a class="mobile-nav-link" href="/cart">
+    <i class="fa fa-cart-shopping"></i>
+  </a>
+  <a class="mobile-nav-link" href="/profile/favs">
+    <i class="fa fa-heart"></i>
+  </a>
+  {% if request.user.is_authenticated and request.user.is_user %}
+    <a class="mobile-nav-link" href="/profile">
+      <i class="fa fa-user"></i>
+    </a>
+  {% else %}
+    <a class="mobile-nav-link" href="/login">
+      <i class="fa fa-user"></i>
+    </a>
+  {% endif %}
+</nav>

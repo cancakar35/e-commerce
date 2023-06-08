@@ -1,0 +1,64 @@
+{% extends 'vendorBase.html' %}
+{% load custom_tags %}
+{% block title %}Ödeme - MyStore Satıcı{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    <div class="vendor-wallet-container">
+        <div class="vendor-wallet">
+            <div>Toplam Kazanç</div>
+            <div class="vendor-wallet-balance">{{wallet.balance|formatDisplayPrice}} TL</div>
+        </div>
+        <div class="vendor-transactions">
+            {% if transactions %}
+            <h5>Son İşlemler</h5>
+            {% for transaction in transactions|slice:":10" %}
+            <div class="transaction-info {% if transaction.transactionType == "1" %}transaction-type-in{% else %}transaction-type-out{% endif %}">
+                <div>{{transaction.info}}</div>
+                <div>{% if transaction.transactionType == "1" %}+{% else %}-{% endif %}{{transaction.amount|formatDisplayPrice}} TL</div>
+            </div>
+            {% endfor %}
+            <button class="all-transactions-button" id="allTransActionsBtn">TÜM İŞLEMLERİ GÖSTER</button>
+            {% else %}
+            <div class="vendor-no-transaction">
+                <i class="fa fa-hand-holding-dollar"></i>
+                <span>Kayıtlı Ödeme İşlemi Bulunamadı</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="modal-background vendor-transaction-modal" id="transactionsModal">
+            <div class="transactions-modal-content">
+                <div class="transactions-modal-header">
+                    <h4>Tüm İşlemler</h4>
+                    <span class="close-modal" id="transactionsModalClose">&times;</span>
+                </div>
+                <div class="transactions-modal-body">
+                    {% for transaction in transactions %}
+                    <div class="transaction-modal-info {% if transaction.transactionType == "1" %}transaction-type-in{% else %}transaction-type-out{% endif %}">
+                        <div class="transaction-modal-date">{{transaction.created_at|date:"j M Y"}}</div>
+                        <div class="transaction-modal-card">
+                            <div>{{transaction.info}}</div>
+                            <div>{% if transaction.transactionType == "1" %}+{% else %}-{% endif %}{{transaction.amount|formatDisplayPrice}} TL</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block body_script %}
+<script>
+    const transactionsModal = document.getElementById("transactionsModal");
+    const transactionsModalClose = document.getElementById("transactionsModalClose");
+    const allTransActionsBtn = document.getElementById("allTransActionsBtn");
+    allTransActionsBtn.addEventListener("click", function (event) {
+        transactionsModal.style.display = "block";
+        document.body.style.overflow = "hidden";
+    });
+    transactionsModalClose.addEventListener("click", function (event) {
+        transactionsModal.style.display = "none";
+        document.body.style.overflow = "auto";
+    });
+</script>
+{% endblock body_script %}

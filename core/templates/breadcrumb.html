@@ -1,0 +1,14 @@
+{% load mptt_tags %}
+<ul class="topcatbreadcrumb">
+    <li><a href="/">Ana Sayfa</a></li>
+    {% recursetree page.get_category_ancestors %}
+        <li>
+            <a href="{{ node.get_absolute_url }}">
+                {{node.name}}
+                {% if not node.is_leaf_node %}
+                    {{ children }}
+                {% endif %}
+            </a>
+        </li>
+    {% endrecursetree %}
+</ul>

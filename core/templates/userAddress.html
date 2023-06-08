@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load custom_tags %}
+{% block title %}Adres Bilgilerim - MyStore{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    <div class="profile-row">
+        <div class="left-side">
+            <div class="left-layout-wrapper">
+                <h4>Hesabım</h4>
+                <a href="/profile/orders" class="left-layout-item">
+                    <i class="fa fa-box fa-fw"></i>
+                    <span>Siparişlerim</span>
+                </a>
+                <a href="/profile" class="left-layout-item">
+                    <i class="fa fa-user-gear fa-fw"></i>
+                    <span>Kullanıcı Bilgilerim</span>
+                </a>
+                <a href="/profile/address" class="left-layout-item active">
+                    <i class="fa fa-location-dot fa-fw"></i>
+                    <span>Adres Bilgilerim</span>
+                </a>
+            </div>
+        </div>
+        <div class="right-side profile-address">
+            <h4>Adreslerim</h4>
+            <div class="add-address-button">
+                <i class="fa fa-plus"></i>
+                <span>Yeni Adres Ekle</span>
+            </div>
+            <div class="address-content">
+                {% for adres in request.user.user_account.get_addresses %}
+                    <div class="mstr-flex-col address-detail-card" data-index="{{adres.id}}">
+                        <div class="address-detail-card-header">
+                            <span>{{adres.title}}</span>
+                            <div>
+                                <button class="icon-edit-item" data-index="{{adres.id}}">
+                                    <i class="fa fa-pen-to-square"></i>
+                                </button>
+                                <button class="remove-item" data-index="{{adres.id}}">
+                                    <i class="fa fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mstr-flex-col address-detail-card-body">
+                            <span>{{adres.name}} {{adres.lastname}}</span>
+                            <span>{{adres.phone}}</span>
+                            <span>{{adres.neighborhood}}</span>
+                            <span>{{adres.address}}</span>
+                            <span>{{adres.district}}/{{adres.city}}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% include "addressModal.html" %}
+        {% include "deleteModal.html" %}
+    </div>
+</div>
+{% endblock content %}
+{% block body_script %}
+<script>
+    const modal = document.getElementById('addressModal');
+    const deleteModal = document.getElementById("deleteModal");
+    const deleteModalText = document.getElementById('deleteModalText');
+    const closeModal = document.getElementById('addressCloseModal');
+    const addressTitle = document.getElementById('addressTitle');
+    const addressName = document.getElementById('addressName');
+    const addressLastName = document.getElementById('addressLastName');
+    const addressPhone = document.getElementById('address_phone_input');
+    const addressCity = document.getElementById('addressCity');
+    const addressDistrict = document.getElementById('addressDistrict');
+    const addressNeighbor = document.getElementById('addressNeighbor');
+    const addressLine = document.getElementById('addressLine');
+    const tckn = document.getElementById('addressTckn');
+    addressPhone.addEventListener('keydown', enforceFormat);
+    tckn.addEventListener("keydown", forceNumericInput);
+    closeModal.onclick = function () {
+        modal.style.display = 'none';
+    }
+    $('form[name="addressModalForm"').on('input', function (){
+        $('#addressButton').prop('disabled',false);
+    });
+    $('.delete-modal-btn.cancel').on('click', function() {
+        deleteModal.style.display = 'none';
+    });
+    $('.delete-modal-btn.approve').on('click', function () {
+        let adresId = deleteModal.dataset.index;
+        $.ajax({
+            type: 'POST',
+            url: '/profile/address/rmv',
+            data: {
+                adresId: adresId,
+                csrfmiddlewaretoken: '{{csrf_token}}'
+            },
+            success: function (json) {
+                $('.address-detail-card[data-index="' + adresId + '"]').remove();
+                deleteModal.removeAttribute("data-index");
+                deleteModal.style.display = 'none';
+            },
+            error: function (xhr, status, err) {}
+        });
+    });
+    $('.remove-item').on('click', function (event) {
+        event.preventDefault();
+        deleteModal.dataset.index = $(this).data("index");
+        deleteModalText.innerHTML = $(this).parent().siblings('span').text() + " adresini silmek istiyor musunuz?";
+        deleteModal.style.display = "block";
+    });
+
+    $('.icon-edit-item').on('click', function (event) {
+        event.preventDefault();
+        document.getElementById('modal-header-text').innerHTML = "Adresi Düzenle";
+        document.getElementById('addressButton').innerHTML = "ADRESİ GÜNCELLE";
+        addressInfo = $('.address-detail-card[data-index="' + $(this).data("index") + '"]').find('span');
+        addressTitle.value = addressInfo[0].innerHTML;
+        let name = addressInfo[1].innerHTML.split(" ");
+        let city = addressInfo[5].innerHTML.split("/");
+        addressName.value = name[0];
+        addressLastName.value = name[1];
+        addressPhone.value = addressInfo[2].innerHTML;
+        addressCity.value = city[1];
+        addressDistrict.value = city[0];
+        addressNeighbor.value = addressInfo[3].innerHTML;
+        addressLine.value = addressInfo[4].innerHTML;
+        let inputId = document.createElement("input");
+        inputId.type = "hidden";
+        inputId.name = "adresId";
+        inputId.value = $(this).data("index");
+        document.getElementsByName("addressModalForm")[0].appendChild(inputId);
+        modal.style.display = 'block';
+    });
+
+
+
+    $('.add-address-button').on('click', function (event) {
+        event.preventDefault();
+        let inputId = document.getElementsByName('adresId')[0];
+        if (inputId){
+            inputId.remove();
+        }
+        addressTitle.value = "";
+        addressName.value = "";
+        addressLastName.value = "";
+        addressPhone.value = "";
+        addressCity.value = "";
+        addressDistrict.value = "";
+        addressNeighbor.value = "";
+        addressLine.value = "";
+        tckn.value = "";
+        document.getElementById('modal-header-text').innerHTML = "Adres Ekle";
+        document.getElementById('addressButton').innerHTML = "ADRES EKLE";
+        modal.style.display = 'block';
+    });
+
+    function ValidateForm() {
+        let errMessage = document.getElementById("errorMessage");
+        if (!checkPhoneNumber(addressPhone.value)){
+            errMessage.style.display = "inline-block";
+            errMessage.innerHTML = "Telefon numarası yanlış biçimde girildi!";
+            return false;
+        }
+        return true;
+    }
+</script>
+{% endblock body_script %}

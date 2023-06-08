@@ -1,0 +1,174 @@
+{% extends 'vendorBase.html' %}
+{% load mptt_tags %}
+{% block title %}Ürün Ekle - MyStore{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    <div class="vendor-add-product">
+        <h3>Ürün Ekle</h3>
+        <div class="vndAddProduct-content">
+            <form method="POST" class="vndAddProduct-form" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div id="vndAddProduct-firststep">
+                    <label for="productTitle">Ürün Adı</label>
+                    <input type="text" name="productTitle" id="productTitle" maxlength="255" required>
+                    <label for="productBrand">Marka</label>
+                    <input type="text" name="productBrand" id="productBrand" maxlength="255">
+                    <label for="productCategory">Kategori</label>
+                    <select name="productCategory" id="productCategory" required>
+                        <option value="" selected disabled hidden>Kategori seçiniz</option>
+                        {% for i in categories %}
+                        <option value="{{i.id}}">{{i.name}}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="productDesc">Ürün Açıklaması</label>
+                    <textarea name="productDesc" id="productDesc" maxlength="512"></textarea>
+                    <label for="productUploadImage">Ürün Görselleri</label>
+                    <input type="file" accept="image/*" name="productImage" id="productUploadImage" multiple>
+                    <div class="vndAddProduct-gallery" id="vndAddProductGallery"></div>
+                    <label>Ürün Seçenekleri</label>
+                    <div id="addSpecsDiv" class="vndAddProduct-addspecsDiv"></div>
+                    <button class="vndAddProduct-addspecsBtn" id="addSpecsBtn" type="button">
+                        <i class="fa fa-plus"></i>
+                        <span>Ekle</span>
+                    </button>
+                    <button class="vndAddProduct-delspecsBtn" id="delSpecsBtn" type="button">
+                        <i class="fa fa-minus"></i>
+                        <span>Kaldır</span>
+                    </button>
+                    <div class="mstr-flex-row">
+                        <div class="mstr-flex-col">
+                            <label for="productPrice">Satış Fiyatı (TL)</label>
+                            <input type="number" inputmode="numeric" step=".01" name="productPrice" id="productPrice" min="0.01" value="0.01" required>
+                        </div>
+                        <div class="mstr-flex-col">
+                            <label for="productDiscount">İndirim</label>
+                            <select name="productDiscount" id="productDiscount">
+                                <option value="" selected>İndirim Yok</option>
+                                {% for i in discounts %}
+                                <option value="{{i.id}}">{{i}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" class="profile-form-button" id="btnStepForward">DEVAM</button>
+                </div>
+                <div id="vndAddProduct-secondstep" style="display: none;">
+                    <h5>Stok Bilgileri</h5>
+                    <div class="vndAddProduct-specList">
+                        <div id="specListHeader"></div>
+                    </div>
+                    <div class="vndAddProduct-newSpecList">
+                        <button id="newSpecList" type="button"><i class="fa fa-plus"></i></button>
+                    </div>
+                    <button class="mstr-btn mstr-btn-outline form-sbmt-button" id="btnStepBack" type="button">GERİ DÖN</button>
+                    <button class="mstr-btn mstr-btn-primary form-sbmt-button" id="btnSubmitProduct" type="submit">ÜRÜN EKLE</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block body_script %}
+<script>
+    const imageInp = document.getElementById("productUploadImage");
+    const addSpecsDiv = document.getElementById("addSpecsDiv");
+    const firstStep = document.getElementById("vndAddProduct-firststep");
+    const secondStep = document.getElementById("vndAddProduct-secondstep");
+    const specListHeader = document.getElementById("specListHeader");
+    const newSpecListBtn = document.getElementById("newSpecList");
+    let specListSelect = [];
+    let specvalues = [];
+    function newSpecSelectLine() {
+        let specDiv = document.createElement("div");
+        specDiv.className = "vndAddProduct-specListSelect";
+        specListSelect.push(specDiv);
+        $(".vndAddProduct-specList").append(specDiv);
+        for (let i = 0; i < specvalues.length; i++) {
+            let select = document.createElement("select");
+            specvalues[i].forEach(spec => {
+                    let opt = document.createElement("option");
+                    opt.value = spec;
+                    opt.text = spec;
+                    select.add(opt);
+            });
+            specDiv.appendChild(select);
+        }
+        let inp = document.createElement("input");
+        inp.type = "number";
+        inp.min = "0";
+        inp.value = "0";
+        specDiv.appendChild(inp);
+    }
+    imageInp.addEventListener('change', function (event) {
+        for (let i = 0; i < imageInp.files.length; i++) {
+            let img = new Image();
+            img.src = URL.createObjectURL(event.target.files[i]);
+            document.getElementById("vndAddProductGallery").appendChild(img);
+        }
+    });
+    document.getElementById("addSpecsBtn").addEventListener("click", function (event) {
+        $(addSpecsDiv).append('<div class="mstr-flex-row"><div class="mstr-flex-col">\
+            <input type="text" placeholder="Seçenek İsmi (Renk,Beden vb.)" name="specName" required></div><div class="mstr-flex-col">\
+                <input type="text" name="specValue" placeholder="Seçenekleri virgülle ayırarak giriniz." required></div></div>');
+    });
+    document.getElementById("delSpecsBtn").addEventListener("click", function (event) {
+        if (addSpecsDiv.hasChildNodes()){
+            addSpecsDiv.removeChild(addSpecsDiv.lastChild);
+        }
+    });
+    document.getElementById("btnStepForward").addEventListener("click", function (event){
+        specListHeader.innerHTML = "";
+        $(".vndAddProduct-specList > *").not(":first-child").remove();
+        specvalues = [];
+        specListSelect = [];
+        $("#addSpecsDiv input").filter(function () {return this.value=="";}).parent().parent().remove();
+        if (addSpecsDiv.hasChildNodes()){
+            newSpecListBtn.style.display = "block";
+            specListHeader.style.display = "flex";
+            for (const x of document.getElementsByName("specName")) {
+                let div = document.createElement("div");
+                div.innerHTML = x.value.trim();
+                specListHeader.appendChild(div);
+            }
+            for (const y of document.getElementsByName("specValue")) {
+                specvalues.push(y.value.split(",").map(s => s.trim()));
+            }
+            let div = document.createElement("div");
+            div.innerHTML = "Stok";
+            specListHeader.appendChild(div);
+            newSpecSelectLine();
+        }
+        else {
+            newSpecListBtn.style.display = "none";
+            specListHeader.style.display = "none";
+            $(".vndAddProduct-specList").append($('<input type="number" id="addProductSingleStock" min="0"\
+            placeholder="Ürün Stoğu" step="1" required style="width:200px;">'));
+        }
+        firstStep.style.display = "none";
+        secondStep.style.display = "block";
+    });
+    document.getElementById("btnStepBack").addEventListener("click", function (event){
+        secondStep.style.display = "none";
+        firstStep.style.display = "block";
+    });
+    newSpecListBtn.addEventListener("click", function (event) {
+        newSpecSelectLine();
+    });
+    $(".vndAddProduct-form").on("submit", function (event) {
+        let specData = {};
+        if (!specListSelect.length) {
+            specData[""] = parseInt(document.getElementById("addProductSingleStock").value,10);
+        }
+        else {
+            for (const spec of specListSelect) {
+                specData[$(spec).children().not(":last-child").map(function(){return $(this).val();}).get().join("-")] = parseInt(spec.lastChild.value,10);
+            }
+        }
+        let inp = document.createElement("input");
+        inp.type = "hidden";
+        inp.name = "productStock";
+        inp.value = JSON.stringify(specData);
+        $(".vndAddProduct-form").append(inp);
+    });
+</script>
+{% endblock body_script %}

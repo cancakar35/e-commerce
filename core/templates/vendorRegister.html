@@ -1,0 +1,98 @@
+{% extends 'vendorBase.html' %}
+{% block title %}Satıcı Ol - MyStore{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    <div class="login-form-div">
+        <h1>Satıcı Başvurusu</h1>
+        <div id="errorsDiv">
+			<p class="errorMessage" id="errorMessage"></p>
+		</div>
+        <form method="POST" class="login-form" onsubmit="return ValidateForm();" novalidate>
+            {% csrf_token %}
+            <div class="vendor-register-first">
+                <label for="id_companyName">Mağaza Adı</label>
+                {{form.companyName}}
+                <label for="id_email">Email</label>
+                {{form.email}}
+                <label for="id_fullname">Adınız</label>
+                {{form.fullname}}
+                <label for="id_phone">Telefon Numarası</label>
+                {{form.phone}}
+                <label for="id_password">Şifre</label>
+                {{form.password}}
+                <button class="mstr-btn mstr-btn-primary form-sbmt-button" id="btnVendorRegisterDevam" type="button">DEVAM</button>
+            </div>
+            <div class="vendor-register-second">
+                <label for="id_VKN">VKN</label>
+                {{form.VKN}}
+                <label for="id_vergiDairesi">Veri Dairesi</label>
+                {{form.vergiDairesi}}
+                <label for="id_country">Ülke</label>
+                {{form.country}}
+                <label for="id_city">Şehir</label>
+                {{form.city}}
+                <label for="id_address">Adres</label>
+                {{form.address}}
+                <button class="mstr-btn mstr-btn-outline form-sbmt-button" id="btnVendorRegisterBack" type="button">GERİ DÖN</button>
+                <button class="mstr-btn mstr-btn-primary form-sbmt-button" type="submit">ONAYLA</button>
+            </div>
+        </form>
+        <p>Zaten hesabınız varsa, <a href="/satici/login">Giriş Yap</a></p>
+    </div>
+</div>
+{% endblock content %}
+{% block body_script %}
+<script>
+    let phone_input = document.getElementById("id_phone");
+    let errorMessage = document.getElementById("errorMessage")
+	let errorsDiv = document.getElementById("errorsDiv");
+    phone_input.addEventListener('keydown', enforceFormat);
+    phone_input.addEventListener("change", (event)=>{
+		if (!checkPhoneNumber(phone_input.value) && phone_input.value != ""){
+			phone_input.classList.add("error-input");
+	}
+		else{
+			phone_input.classList.remove("error-input");
+		}
+	});
+    document.getElementById("id_VKN").addEventListener("keydown", forceNumericInput);
+    document.getElementById("btnVendorRegisterDevam").addEventListener("click", function () {
+        document.querySelector(".vendor-register-first").style.display = "none";
+        document.querySelector(".vendor-register-second").style.display = "block";
+    });
+    document.getElementById("btnVendorRegisterBack").addEventListener("click", function () {
+        document.querySelector(".vendor-register-first").style.display = "block";
+        document.querySelector(".vendor-register-second").style.display = "none";
+    });
+
+    function ValidateForm() {
+		let email = document.getElementById("id_email").value;
+		let name = document.getElementById("id_fullname").value;
+		let phone = document.getElementById("id_phone").value;
+        let companyName = document.getElementById("id_companyName").value;
+		let password = document.getElementById("id_password").value;
+        let vkn = document.getElementById("id_VKN").value;
+        let vdaire = document.getElementById("id_vergiDairesi").value;
+        let country = document.getElementById("id_country").value;
+        let city = document.getElementById("id_city").value;
+        let address = document.getElementById("id_address").value;
+		if (email == "" || name == "" || companyName == "" || phone == "" || password == "" || !checkPhoneNumber(phone) ||
+        vkn == "" || vdaire == "" || country == "" || city == "" || address == ""){
+            errorMessage.innerHTML = "Lütfen tüm alanları doldurun";
+			errorMessage.style.display = "inline-block";
+			return false;
+		}
+		if (password.length < 8) {
+			errorMessage.innerHTML = "Parolanız en az 8 karakter içermelidir.";
+			errorMessage.style.display = "inline-block";
+			return false;
+		}
+        if (vkn.length < 10) {
+            errorMessage.innerHTML = "Lütfen geçerli bir vergi kimlik numarası giriniz.";
+			errorMessage.style.display = "inline-block";
+			return false;
+        }
+		return true;
+	}
+</script>
+{% endblock body_script %}

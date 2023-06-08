@@ -1,0 +1,43 @@
+{% extends 'vendorBase.html' %}
+{% load custom_tags %}
+{% block title %}Siparişleriniz - MyStore{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    <div class="vendor-orders">
+        {% if orders %}
+        <div class="vendor-orders-header">
+            <h4>Siparişleriniz</h4>
+        </div>
+        <div class="vendor-orders-body">
+            {% for order, items in orders.items %}
+            <a href="/satici/order/{{order.id}}">
+                <div class="vendor-order">
+                    <div class="vendor-order-image">
+                        <img src="{{items.0.product.get_first_image.image.url}}">
+                    </div>
+                    <div>{{order.created_at}}</div>
+                    <div>{{order.get_total_quantity}} ürün</div>
+                    <div>{{items|getVendorOrderStatus}}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="orders-empty">
+            <i class="fa-solid fa-boxes-stacked"></i>
+            <h3>
+                Henüz {% if request.GET.filtre %}
+                    {% if request.GET.filtre == "3" %}
+                    kargoya vermiş olduğunuz
+                    {% elif request.GET.filtre == "5" %}
+                    iade edilmiş
+                    {% elif request.GET.filtre == "6" %}
+                    iptal edilmiş
+                    {% endif %}
+                {% endif %} bir siparişiniz yok.
+            </h3>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock content %}

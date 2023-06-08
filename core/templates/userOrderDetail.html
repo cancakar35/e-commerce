@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% load custom_tags %}
+{% block title %}Sipariş Detayı - MyStore{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    <div class="profile-row">
+        <div class="left-side">
+            <div class="left-layout-wrapper">
+                <h4>Hesabım</h4>
+                <a href="/profile/orders" class="left-layout-item">
+                    <i class="fa fa-box fa-fw"></i>
+                    <span>Siparişlerim</span>
+                </a>
+                <a href="/profile" class="left-layout-item">
+                    <i class="fa fa-user-gear fa-fw"></i>
+                    <span>Kullanıcı Bilgilerim</span>
+                </a>
+                <a href="/profile/address" class="left-layout-item">
+                    <i class="fa fa-location-dot fa-fw"></i>
+                    <span>Adres Bilgilerim</span>
+                </a>
+            </div>
+        </div>
+        <div class="right-side order-detail">
+            <div class="order-detail-main-header">
+                <h4>Sipariş Detayı</h4>
+                <div>
+                    <button class="order-detail-btn-refund">Ürün İade</button>
+                    <button class="order-detail-btn-cancel">Sipariş İptal</button>
+                </div>
+            </div>
+            <div class="order-detail-container">
+                <div class="order-detail-header">
+                    <div>
+                        <span>Sipariş No</span>
+                        <span>{{order.id}}</span>
+                    </div>
+                    <div>
+                        <span>Tarih</span>
+                        <span>{{order.created_at}}</span>
+                    </div>
+                    <div>
+                        <span>Durum</span>
+                        <div>
+                            {{order.get_total_status}}
+                        </div>
+                    </div>
+                </div>
+                <div class="order-detail-content">
+                    {% for vendor, items in order.get_group_order_items.items %}
+                        <div class="order-vendor-group">
+                            <div class="order-vendor-header">
+                                <div class="vendor-info">
+                                    <div>Satıcı:</div>
+                                    <a href="#" class="vendor-company">{{vendor}}</a>
+                                </div>
+                            </div>      
+                            {% for item in items %}
+                                <div class="order-item-wrapper">
+                                    <div class="order-item">
+                                        <div class="order-item-image">
+                                            <img src="{{item.product.get_first_image.image.url}}">
+                                        </div>
+                                        <a href="{{item.product.get_absolute_url}}?vendor={{vendor}}" class="order-item-details">
+                                            <div class="order-item-title">{{item.quantity}} adet {{item.product.title}}</div>
+                                            <div class="order-item-specs">
+                                                {{item.get_specs_text}}
+                                            </div>
+                                        </a>
+                                        <div class="order-item-price">{{item.totalPrice|formatDisplayPrice}} TL</div>
+                                        <div class="order-item-status">
+                                            <span>{{item.get_status}}</span>
+                                        </div>
+                                        <div class="order-item-action">
+                                            {% if item.status == "3" %}
+                                                <a target="_blank" rel="noopener noreferrer" href="{% if item.deliveryURL %}//{{item.deliveryURL}}{% else %}#{% endif %}">Kargo Takip</a>
+                                            {% else %}
+                                                <button class="btnTekrarAl" data-index="{{item.id}}">Tekrar Al</button>
+                                                {% if item.status == "4" and not item.order_product_ratings %}
+                                                <button class="order-item-rating-btn" data-index="{{item.id}}">DEĞERLENDİR</button>
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="order-detail-summary">
+                    <div class="order-detail-address">
+                        <div class="order-detail-summary-header">
+                            <span>Adres Bilgileri</span>
+                        </div>
+                        <div class="order-detail-address-content">
+                            <div class="order-detail-shipping">
+                                <span>Teslimat Adresi</span>
+                                <div>
+                                    <span>{{order.deliveryAddress.name}} {{order.deliveryAddress.lastname}}</span>
+                                    <span>{{order.deliveryAddress.neighborhood}} {{order.deliveryAddress.address}}</span>
+                                    <span>{{order.deliveryAddress.district}} / {{order.deliveryAddress.city}}</span>
+                                </div>
+                            </div>
+                            <div class="order-detail-billing">
+                                <span>Fatura Adresi</span>
+                                <div>
+                                    <span>{{order.billingAddress.name}} {{order.billingAddress.lastname}}</span>
+                                    <span>{{order.billingAddress.neighborhood}} {{order.billingAddress.address}}</span>
+                                    <span>{{order.billingAddress.district}} / {{order.billingAddress.city}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="order-detail-payment">
+                        <div class="order-detail-summary-header">
+                            <span>Ödeme Bilgileri</span>
+                        </div>
+                        <div class="order-detail-payment-content">
+                            <div>
+                                <span>Ürünler</span>
+                                <span>{{order.get_total|formatDisplayPrice}} TL</span>
+                            </div>
+                            <hr>
+                            <div>
+                                <span>Kargo</span>
+                                <span>0,00 TL</span>
+                            </div>
+                            <hr>
+                            <div class="order-detal-totalPrice">
+                                <span>Toplam</span>
+                                <span>{{order.get_total|formatDisplayPrice}} TL</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-background" id="orderCancelModal">
+            <div class="orderCancel-modal-content">
+                <div class="orderCancel-modal-header">
+                    <h4 id="modal-header-text">Sipariş İptal</h4>
+                    <span class="close-modal" id="orderCancelModalClose">&times;</span>
+                </div>
+                <div class="orderCancel-modal-body">
+                    <span id="orderCancel-modal-text">Lütfen iptal etmek istediğiniz ürünleri seçin.</span>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="orderCancel-items">
+                            {% for item in order.get_order_items %}
+                                {% if item.status in "1,2" %}
+                                    <div class="orderCancel-selectItem">
+                                        <input type="checkbox" name="cancelItem-{{item.id}}" class="orderCancel-check">
+                                        <div class="orderCancel-item-image">
+                                            <img src="{{item.product.get_first_image.image.url}}">
+                                        </div>
+                                        <div class="orderCancel-item-info">
+                                            <span>{{item.product.title}} {{item.get_specs_text}}</span>
+                                            <span class="orderCancel-item-qty">Adet: {{item.quantity}}</span>
+                                            <span>{{item.totalPrice|formatDisplayPrice}} TL</span>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                            <button type="submit" id="cancelOrderItemButton" class="profile-form-button">SEÇİLENLERİ İPTAL ET</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="modal-background" id="orderRefundItem">
+            <div class="orderCancel-modal-content">
+                <div class="orderCancel-modal-header">
+                    <h4>Ürün İade</h4>
+                    <span class="close-modal" id="orderRefundModalClose">&times;</span>
+                </div>
+                <div class="orderCancel-modal-body">
+                    <span id="orderRefund-modal-text">Lütfen iade etmek istediğiniz ürünleri seçin.</span>
+                    <form method="POST" action="{% url 'user-order-refund' ordNo=order.id %}">
+                        {% csrf_token %}
+                        <div class="orderCancel-items">
+                            {% for item in order.get_order_items %}
+                                {% if item.status == "4" %}
+                                    <div class="orderRefund-selectItem">
+                                        <input type="checkbox" name="refundItem-{{item.id}}" class="orderCancel-check">
+                                        <div class="orderCancel-item-image">
+                                            <img src="{{item.product.get_first_image.image.url}}">
+                                        </div>
+                                        <div class="orderCancel-item-info">
+                                            <span>{{item.product.title}} {{item.get_specs_text}}</span>
+                                            <span class="orderCancel-item-qty">Adet: {{item.quantity}}</span>
+                                            <span>{{item.totalPrice|formatDisplayPrice}} TL</span>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                            <button type="submit" id="refundOrderItemButton" class="profile-form-button">SEÇİLENLERİ İADE ET</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="modal-background" id="commentModal">
+            <div class="orderCancel-modal-content">
+                <div class="orderCancel-modal-header">
+                    <h4>Ürün Değerlendirme</h4>
+                    <span class="close-modal" id="commentModalClose">&times;</span>
+                </div>
+                <div class="order-item-comment-modal-body">
+                    <div class="comment-modal-rating-stars">
+                        <i class="fa-solid fa-star" data-index="5"></i>
+                        <i class="fa-solid fa-star" data-index="4"></i>
+                        <i class="fa-solid fa-star" data-index="3"></i>
+                        <i class="fa-solid fa-star" data-index="2"></i>
+                        <i class="fa-solid fa-star" data-index="1"></i>
+                    </div>
+                    <textarea id="commentModalTextArea" placeholder="Yorum Yazın" maxlength="256"></textarea>
+                    <button type="button" id="saveRatingBtn" class="mstr-btn mstr-btn-primary form-sbmt-button">KAYDET</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block body_script %}
+<script>
+    const orderCancelModal = document.getElementById("orderCancelModal");
+    const cancelModalClose = document.getElementById("orderCancelModalClose");
+    const orderRefundModal = document.getElementById("orderRefundItem");
+    const refundModalClose = document.getElementById("orderRefundModalClose");
+    const commentModal = document.getElementById("commentModal");
+    const commentModalClose = document.getElementById("commentModalClose");
+    const commentModalTextArea = document.getElementById("commentModalTextArea");
+    cancelModalClose.onclick = function () {
+        orderCancelModal.style.display = "none";
+    }
+    refundModalClose.onclick = function () {
+        orderRefundModal.style.display = "none";
+    }
+    $(".order-detail-btn-cancel").on("click", function (event) {
+        orderCancelModal.style.display = "block";
+    });
+    $(".order-detail-btn-refund").on("click", function () {
+        orderRefundModal.style.display = "block";
+    })
+    $(".orderCancel-selectItem").on("click", function (event) {
+        if (event.target.tagName != "INPUT")
+        {
+            let check = $(this).children('input[type="checkbox"]');
+            check.prop("checked",!check.prop('checked'));
+        }
+    });
+    $(".order-item-rating-btn").on("click", function (event) {
+        commentModal.dataset.index = this.dataset.index;
+        commentModal.style.display = "block";
+    });
+    $(".comment-modal-rating-stars > i").on("click", function (event) {
+        $("i.selected-star").removeClass("selected-star");
+        if (!this.classList.contains("selected-star")) {
+            this.classList.add("selected-star");
+        }
+    });
+    commentModalClose.addEventListener("click", function (event) {
+        commentModal.removeAttribute("data-index");
+        commentModal.style.display = "none";
+        commentModalTextArea.value = "";
+        $("i.selected-star").removeClass("selected-star");
+    });
+    if (document.getElementsByClassName("orderCancel-selectItem").length == 0) {
+        document.getElementById("orderCancel-modal-text").innerHTML = "İptal edebileceğiniz ürün bulunmuyor.";
+        document.getElementById("cancelOrderItemButton").disabled = true;
+    }
+    $(".orderRefund-selectItem").on("click", function (event) {
+        if (event.target.tagName != "INPUT")
+        {
+            let check = $(this).children('input[type="checkbox"]');
+            check.prop("checked",!check.prop('checked'));
+        }
+    });
+    if (document.getElementsByClassName("orderRefund-selectItem").length == 0) {
+        document.getElementById("orderRefund-modal-text").innerHTML = "İade edebileceğiniz ürün bulunmuyor.";
+        document.getElementById("refundOrderItemButton").disabled = true;
+    }
+    $(".btnTekrarAl").on("click", function (event) {
+        $.ajax({
+            type: 'POST',
+            url: '/cart/buyagain',
+            data: {
+                itemId: this.dataset.index,
+                csrfmiddlewaretoken: "{{csrf_token}}"
+            },
+            success: function (json) {
+                window.location.replace("/cart");
+            } ,
+            error: function (xhr, errmsg, err) {
+                alert("Sepete eklenemedi. Hata oluştu.");
+            }
+        });
+    });
+    document.getElementById("saveRatingBtn").addEventListener("click", function (event) {
+        let selectedRating = document.getElementsByClassName("selected-star");
+        if (selectedRating.length > 0) {
+            $.ajax({
+                type: 'POST',
+                url: '/orderitem/addrating',
+                data: {
+                    itemId: commentModal.dataset.index,
+                    rating: selectedRating[0].dataset.index,
+                    comment: commentModalTextArea.value,
+                    csrfmiddlewaretoken: "{{csrf_token}}"
+                },
+                success: function (json) {
+                    commentModal.style.display = "none";
+                    commentModalTextArea.value = "";
+                    $("i.selected-star").removeClass("selected-star");
+                    $(".order-item-rating-btn[data-index='"+commentModal.dataset.index+"']").remove();
+                    commentModal.removeAttribute("data-index");
+                },
+                error: function (xhr, errmsg, err) {
+                    alert(err + " Hata oluştu")
+                }
+            })
+        }
+    });
+</script>
+{% endblock body_script %}

@@ -1,0 +1,58 @@
+{% extends 'vendorBase.html' %}
+{% block title %}{{vendor.CompanyName}} Satıcı Profili{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    <div class="vendor-profile">
+        <div class="vendor-profile-content">
+            <div class="vendor-profile-info">
+                <h1 class="profile-form-header">Mağaza Bilgileri</h1>
+                <div class="mstr-flex-col">
+                    <input type="text" disabled value="{{vendor.CompanyName}}">
+                </div>
+                <div class="mstr-flex-col">
+                    <input type="text" disabled value="{{vendor.user.email}}">
+                </div>
+                <div class="mstr-flex-col">
+                    <input type="text" disabled value="{{vendor.ContactFullName}}">
+                </div>
+                <div class="mstr-flex-row mstr-space-between mstr-form-input-row">
+                    <div class="mstr-flex-col">
+                        <input type="text" disabled value="{{vendor.VergiDairesi}}">
+                    </div>
+                    <div class="mstr-flex-col">
+                        <input type="text" disabled value="{{vendor.VKN}}">
+                    </div>
+                </div>
+                <div class="mstr-flex-col">
+                    <input type="text" disabled value="{{vendor.ContactPhone}}">
+                </div>
+                <div class="mstr-flex-col">
+                    <textarea disabled>{{vendor.get_address}}</textarea>
+                </div>
+            </div>
+            <div>
+                <h1 class="profile-form-header">Şifre Değiştirme</h1>
+                <form method="POST" class="user-info-form">
+                    {% csrf_token %}
+                    <div class="mstr-flex-col">
+                        <label for="oldPassword">Mevcut Şifre</label>
+                        <input type="password" name="oldPass" id="oldPassword" autocomplete="off" required>
+                    </div>
+                    <div class="mstr-flex-col">
+                        <label for="newPassword">Mevcut Şifre</label>
+                        <input type="password" name="newPass" id="newPassword" autocomplete="off" required>
+                    </div>
+                    <button type="submit" id="passButton" class="profile-form-button" disabled>GÜNCELLE</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block body_script %}
+<script>
+    $('form.user-info-form').on('input', function (){
+        $('#passButton').prop('disabled',false);
+    });
+</script>
+{% endblock body_script %}

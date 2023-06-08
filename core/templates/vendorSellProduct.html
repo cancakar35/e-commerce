@@ -1,0 +1,179 @@
+{% extends 'vendorBase.html' %}
+{% load custom_tags %}
+{% block title %}Ürün Sat - MyStore{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    <div class="vendor-sell-product">
+        <h3>Ürün Sat</h3>
+        <div class="vendor-sell-search-content">
+            <div class="vendor-sell-search">
+                <input type="text" id="searchProductInput" maxlength="512" placeholder="Ürün Ara">
+                <button id="btnSearchProduct"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </div>
+            <div class="vendor-sell-search-results" id="searchResults"></div>
+        </div>
+        <a id="productInfoImage" class="vendor-sell-product-image">
+            <img id="productImage">
+        </a>
+        <div class="vendor-sell-content" id="sellContent">
+            <form method="post" id="sellProductForm">
+                {% csrf_token %}
+                <input type="hidden" name="index" id="sellProductIndex">
+                <label for="sellProductPrice">Fiyat</label>
+                <input type="number" name="price" inputmode="numeric" step=".01" id="sellProductPrice" min="0.01" required>
+                <span class="sell-minPriceInfo" id="minPriceInfo"></span>
+                <label for="newDiscount">İndirim</label>
+                <select name="discount" id="sellProductDiscount" required>
+                    <option value="YOK">YOK</option>
+                    {% for disc in discounts %}
+                    <option value="{{disc.id}}">{{disc}}</option>
+                    {% endfor %}
+                </select>
+                <label>Stok</label>
+                <div class="vndAddProduct-specList">
+                    <div id="specListHeader"></div>
+                </div>
+                <div class="vndAddProduct-newSpecList">
+                    <button id="newSpecList" type="button"><i class="fa fa-plus"></i></button>
+                </div>
+                <button class="mstr-btn mstr-btn-primary form-sbmt-button" id="btnSubmitProduct" type="submit">SATIŞA BAŞLA</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block body_script %}
+<script>
+    const searchResults = document.getElementById("searchResults");
+    const searchInput = document.getElementById("searchProductInput");
+    const sellContent = document.getElementById("sellContent");
+    const sellProductPrice = document.getElementById("sellProductPrice");
+    const sellProductDiscount = document.getElementById("sellProductDiscount");
+    const specListHeader = document.getElementById("specListHeader");
+    const newSpecListBtn = document.getElementById("newSpecList");
+    const sellProductForm = document.getElementById("sellProductForm");
+    const sellProductIndex = document.getElementById("sellProductIndex");
+    const productInfoImage = document.getElementById("productInfoImage");
+    const productImage = document.getElementById("productImage");
+    let specListSelect = [];
+    let specvalues = [];
+    searchInput.addEventListener("blur", function (event) {
+        searchResults.style.display = "none";
+    });
+    searchInput.addEventListener("keyup", async function (event) {
+        const query = searchInput.value;
+        if (query && query != "") {
+            fetch(`/satici/product/sell/search/?query=${query}`)
+                .then(response=>response.json())
+                .then(data=> {
+                    searchResults.innerHTML = "";
+                    if (data.length) {
+                        data.forEach(item => {
+                            const div = document.createElement("div");
+                            div.innerHTML = item.product;
+                            div.dataset.index = item.id;
+                            searchResults.appendChild(div);
+                        });
+                        searchResults.style.display = "block";
+                    }
+                    else {
+                        searchResults.style.display = "none";
+                    }
+                });
+        }
+        else {
+            searchResults.style.display = "none";
+            sellContent.style.display = "none";
+            productInfoImage.style.display = "none";
+        }
+    });
+    function newSpecSelectLine() {
+        let specDiv = document.createElement("div");
+        specDiv.className = "vndAddProduct-specListSelect";
+        specListSelect.push(specDiv);
+        $(".vndAddProduct-specList").append(specDiv);
+        for (let i = 0; i < specvalues.length; i++) {
+            let select = document.createElement("select");
+            specvalues[i].forEach(spec => {
+                    let opt = document.createElement("option");
+                    opt.value = spec;
+                    opt.text = spec;
+                    select.add(opt);
+            });
+            specDiv.appendChild(select);
+        }
+        let inp = document.createElement("input");
+        inp.type = "number";
+        inp.min = "0";
+        inp.value = "0";
+        specDiv.appendChild(inp);
+    }
+    $("#searchResults").on("mousedown","div", async function (event) {
+        searchInput.value = this.textContent;
+        sellProductIndex.value = this.dataset.index;
+        sellProductPrice.value = "";
+        sellProductDiscount.value = "YOK";
+        specListHeader.innerHTML = "";
+        newSpecListBtn.style.display = "none";
+        $(".vndAddProduct-specList > *").not(":first-child").remove();
+        specvalues = [];
+        specListSelect = [];
+        fetch(`/satici/product/sell?prd=${this.dataset.index}`)
+            .then(response=>response.json())
+            .then(data=>{
+                if (data.price){
+                    document.getElementById("minPriceInfo").innerHTML="Piyasa Fiyatı: "+data.price+" TL";
+                }
+                productImage.src = data.image;
+                productInfoImage.href = data.link;
+                productInfoImage.style.display = "block";
+                if (Object.values(data.specs).length) {
+                    newSpecListBtn.style.display = "block";
+                    for (const [key,value] of Object.entries(data.specs)) {
+                        let div = document.createElement("div");
+                        div.innerHTML = key;
+                        specListHeader.appendChild(div);
+                        specvalues.push(value);
+                    }
+                    let div = document.createElement("div");
+                    div.innerHTML = "Stok";
+                    specListHeader.appendChild(div);
+                    newSpecSelectLine();
+                }
+                else {
+                    newSpecListBtn.style.display = "none";
+                    let div = document.createElement("div");
+                    div.innerHTML = "Stok";
+                    specListHeader.appendChild(div);
+                    let inp = document.createElement("input");
+                    inp.id = "addProductSingleStock";
+                    inp.type = "number";
+                    inp.min = "0";
+                    inp.step = "1";
+                    inp.required = true;
+                    $(".vndAddProduct-specList").append(inp);
+                }
+            });
+        sellContent.style.display = "block";
+    });
+    newSpecListBtn.addEventListener("click", function (event) {
+        newSpecSelectLine();
+    });
+    sellProductForm.addEventListener("submit", function (event) {
+        let specData = {};
+        if (!specListSelect.length) {
+            specData[""] = parseInt(document.getElementById("addProductSingleStock").value,10);
+        }
+        else {
+            for (const spec of specListSelect) {
+                specData[$(spec).children().not(":last-child").map(function(){return $(this).val();}).get().join("-")] = parseInt(spec.lastChild.value,10);
+            }
+        }
+        let inp = document.createElement("input");
+        inp.type = "hidden";
+        inp.name = "stock";
+        inp.value = JSON.stringify(specData);
+        sellProductForm.appendChild(inp);
+    });
+</script>
+{% endblock body_script %}

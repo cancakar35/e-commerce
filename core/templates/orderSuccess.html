@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Siparişiniz Alındı - MyStore{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    <div class="success-order-container">
+        <i class="fa-solid fa-dolly"></i>
+        <h3>Teşekkürler</h3>
+        <h4>Siparişini Aldık</h4>
+        <div>Sipariş numaranız: <span class="success-ordNo">#{{ordNo}}</span></div> 
+        <div>Siparişinizi <a href="/profile/order/{{ordNo}}" class="success-track-link">sipariş sayfasından</a> takip edebilirsiniz.</div>
+    </div>
+</div>
+{% endblock content %}

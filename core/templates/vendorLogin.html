@@ -1,0 +1,19 @@
+{% extends 'vendorBase.html' %}
+{% load static %}
+{% block title %}Satıcı Girişi - MyStore{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    <div class="login-form-div">
+        <h1>Giriş Yap</h1>
+        <form method="POST" class="login-form">
+            {% csrf_token %}
+            <label for="id_email">Email</label>
+            {{form.email}}
+            <label for="id_password">Şifre</label>
+            {{form.password}}
+            <button class="mstr-btn mstr-btn-primary form-sbmt-button" type="submit">GİRİŞ YAP</button>
+        </form>
+        <p>Hesabınız yok mu? <a href="/satici/register">MyStore'da satış yapmaya başla</a></p>
+    </div>
+</div>
+{% endblock content %}

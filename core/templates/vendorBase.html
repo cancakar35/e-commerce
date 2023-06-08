@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr-TR">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock title %}</title>
+    {% block headblock %}
+    {% endblock headblock %}
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/fa-all.min.css' %}">
+    <script src="{% static 'js/jquery-3.6.3.min.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+</head>
+<body>
+    <header>
+        {% include 'vendorNavbar.html' %}
+        {% block body_header %}{% endblock body_header %}
+    </header>
+    <main>
+        {% if messages %}
+        <div class="mstr-container">
+            <div class="mstr-msg-container">
+            {% for message in messages %}
+                <div {% if message.tags %} class="mstr-alert mstr-alert-{{ message.tags }}" role="alert" {% endif %}>
+                    {% if message.tags == "info" %}
+                        <i class="fa fa-circle-info mstr-alert-icon"></i>
+                    {% elif message.tags == "success" %}
+                        <i class="fa fa-circle-check mstr-alert-icon"></i>
+                    {% elif message.tags == "warning" %}
+                        <i class="fa fa-triangle-exclamation mstr-alert-icon"></i>
+                    {% elif message.tags == "error" %}
+                        <i class="fa fa-minus-circle mstr-alert-icon"></i>
+                    {% endif %}
+                    <div>{{message}}</div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% block content %}
+        {% endblock content %}
+    </main>
+
+    {% block body_script %}{% endblock body_script %}
+
+    <script src="{% static 'js/fa-all.min.js' %}" data-auto-replace-svg="false"></script>
+</body>
+</html>

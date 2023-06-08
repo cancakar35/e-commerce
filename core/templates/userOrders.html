@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load custom_tags %}
+{% block title %}Siparişlerim - MyStore{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    <div class="profile-row">
+        <div class="left-side">
+            <div class="left-layout-wrapper">
+                <h4>Hesabım</h4>
+                <a href="/profile/orders" class="left-layout-item active">
+                    <i class="fa fa-box fa-fw"></i>
+                    <span>Siparişlerim</span>
+                </a>
+                <a href="/profile" class="left-layout-item">
+                    <i class="fa fa-user-gear fa-fw"></i>
+                    <span>Kullanıcı Bilgilerim</span>
+                </a>
+                <a href="/profile/address" class="left-layout-item">
+                    <i class="fa fa-location-dot fa-fw"></i>
+                    <span>Adres Bilgilerim</span>
+                </a>
+            </div>
+        </div>
+        <div class="right-side profile-orders">
+            {% if orders %}
+                <div class="orders-header">
+                    <h4>Siparişlerim</h4>
+                    <div class="orders-filter-drop">
+                            <button class="orders-filterBy-Btn">
+                                <i class="fa-solid fa-filter"></i>
+                                <span>Filtrele</span>
+                            </button>
+                            <div class="orders-filter-drop-content">
+                                <a href="/profile/orders">Tüm Siparişler</a>
+                                <a href="/profile/orders?filtre=4">Teslim Edilenler</a>
+                                <a href="/profile/orders?filtre=5">İade Edilenler</a>
+                                <a href="/profile/orders?filtre=6">İptal Edilenler</a>
+                            </div>
+                    </div>
+                </div>
+                <div class="orders-container">
+                    {% for order in orders %}
+                        <a href="{{order.get_absolute_url}}" class="order-detail-link">
+                            <div class="order">
+                                <div class="order-image">
+                                    <img src="{{order.order_items.first.product.get_first_image.image.url}}">
+                                </div>
+                                <div>
+                                    <span>{{order.created_at}}</span>
+                                </div>
+                                <div>
+                                    <span>{{order.get_total_quantity}} ürün</span>
+                                </div>
+                                <div>
+                                    <span>{{order.get_total|formatDisplayPrice}} TL</span>
+                                </div>
+                                <div>
+                                    <span>{{order.get_total_status}}</span>
+                                </div>
+                            </div>
+                        </a>                   
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="orders-empty">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <h3>
+                        Henüz {% if request.GET.filtre %}
+                            {% if request.GET.filtre == "4" %}
+                            teslim edilen
+                            {% elif request.GET.filtre == "5" %}
+                            iade edilen
+                            {% elif request.GET.filtre == "6" %}
+                            iptal edilen
+                            {% endif %}
+                        {% endif %} bir siparişiniz yok.
+                    </h3>
+                    <a href="/" class="mstr-btn mstr-btn-primary">Alışverişe Başla</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block body_script %}
+<script>
+    const filterByDrop = document.getElementsByClassName("orders-filter-drop-content")[0];
+    $(".orders-filterBy-Btn").on("click", function (event) {
+        event.stopPropagation();
+        filterByDrop.style.display = $(filterByDrop).css("display") == "none" ? "block" : "none";
+    });
+    window.onclick = function (event) {
+        if (!(event.target.matches(".orders-filter-drop") || event.target.matches(".orders-filter-drop-content a"))) {
+            filterByDrop.style.display = "none";
+        }
+    }
+</script>
+{% endblock body_script %}

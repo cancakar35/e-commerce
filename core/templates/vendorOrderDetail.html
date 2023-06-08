@@ -1,0 +1,261 @@
+{% extends 'vendorBase.html' %}
+{% load custom_tags %}
+{% block title %}Sipariş Detayı - MyStore Satıcı Paneli{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    <div class="vendor-order-detail">
+        <div class="order-detail-main-header">
+            <h4>Sipariş Detayı</h4>
+            {% with items|getOrderItemsNumStatus as itemsStatusList %}
+            {% if "1" in itemsStatusList or "2" in itemsStatusList %}
+            <div class="vendor-order-status-drop">
+                <button class="vendor-order-statusBtn">DURUM DEĞİŞTİR</button>
+                <div class="vendor-order-drop-content">
+                    {% if "1" in itemsStatusList %}
+                    <button id="chTotalStatusPrepared">
+                        <i class="fa-solid fa-box-open fa-fw"></i>
+                        <span>&nbsp; Hazırlanıyor</span>
+                    </button>
+                    {% endif %}
+                    <button id="chTotalStatusCargo">
+                        <i class="fa fa-truck-ramp-box fa-fw"></i>
+                        <span>&nbsp; Kargo Giriş</span>
+                    </button>
+                    <button id="chTotalStatusCancel">
+                        <i class="fa fa-xmark fa-fw"></i>
+                        <span>&nbsp; İptal Et</span>
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+        <div class="vendor-order-detail-body">
+            <div class="order-detail-header">
+                <div>
+                    <span>Sipariş No</span>
+                    <span>{{order.id}}</span>
+                </div>
+                <div>
+                    <span>Tarih</span>
+                    <span>{{order.created_at}}</span>
+                </div>
+                <div>
+                    <span>Durum</span>
+                    <div>
+                        {{items|getVendorOrderStatus}}
+                    </div>
+                </div>
+            </div>
+            <div class="order-detail-content">
+                {% for item in items %}
+                <div class="order-item-wrapper">
+                    <div class="order-item vendor-order-item-list">
+                        <div class="order-item-image">
+                            <img src="{{item.product.get_first_image.image.url}}">
+                        </div>
+                        <div class="order-item-details">
+                            <div class="order-item-title">{{item.quantity}} adet {{item.product.brand}} {{item.product.title}}</div>
+                            <div class="order-item-specs">
+                                {{item.get_specs_text}}
+                            </div>
+                        </div>
+                        <div class="order-item-price">{{item.totalPrice|formatDisplayPrice}} TL</div>
+                        <div class="order-item-status">
+                            <span>{{item.get_status}}</span>
+                        </div>
+                        {% if item.status in "1,2" %}
+                            <div class="vendor-order-status-drop">
+                                <button class="vendor-order-statusBtn">DURUM</button>
+                                <div class="vendor-order-drop-content">
+                                    {% if item.status == "1" %}
+                                    <button data-status="2" data-index="{{item.id}}">
+                                        <i class="fa-solid fa-box-open fa-fw"></i>
+                                        <span>&nbsp; Hazırlanıyor</span>
+                                    </button>
+                                    {% endif %}
+                                    <button data-status="3" data-index="{{item.id}}">
+                                        <i class="fa fa-truck-ramp-box fa-fw"></i>
+                                        <span>&nbsp; Kargo Giriş</span>
+                                    </button>
+                                    <button data-status="6" data-index="{{item.id}}">
+                                        <i class="fa fa-xmark fa-fw"></i>
+                                        <span>&nbsp; İptal Et</span>
+                                    </button>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div><button class="vendor-order-statusBtn" disabled>DURUM</button></div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% include "deleteModal.html" %}
+    <div class="modal-background" id="cargoModal">
+        <div class="cargo-modal-content">
+            <div class="cargo-modal-header">
+                <h4>Kargo Girişi</h4>
+                <span class="close-modal" id="cargoCloseModal">&times;</span>
+            </div>
+            <div class="cargo-modal-body">
+                <label for="cargoModalDeliveryURL">Kargo Takip URL</label>
+                <input type="url" id="cargoModalDeliveryURL">
+                <div class="cargo-modal-actions">
+                    <button class="cargo-modal-btn cancel" id="cargoModalBtnCancel">İPTAL</button>
+                    <button class="cargo-modal-btn approve" id="cargoModalBtnApprove" disabled>ONAYLA</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block body_script %}
+<script>
+    const deleteModal = document.getElementById("deleteModal");
+    const deleteModalText = document.getElementById('deleteModalText');
+    const cargoModal = document.getElementById("cargoModal");
+    const chTotalStatusPrepared = document.getElementById("chTotalStatusPrepared");
+    const chTotalStatusCancel = document.getElementById("chTotalStatusCancel");
+    const chTotalStatusCargo = document.getElementById("chTotalStatusCargo");
+    const cargoModalDeliveryURL = document.getElementById("cargoModalDeliveryURL");
+    const cargoModalBtnApprove = document.getElementById("cargoModalBtnApprove");
+    document.getElementById("cargoCloseModal").addEventListener("click", function (event) {
+        cargoModal.style.display = "none";
+        cargoModal.removeAttribute("data-all");
+        cargoModal.removeAttribute("data-index");
+    });
+    document.getElementById("cargoModalBtnCancel").addEventListener("click", function (event) {
+        cargoModal.style.display = "none";
+        cargoModal.removeAttribute("data-all");
+        cargoModal.removeAttribute("data-index");
+    });
+    $('.delete-modal-btn.cancel').on('click', function() {
+        deleteModal.style.display = 'none';
+        deleteModal.removeAttribute("data-all");
+        deleteModal.removeAttribute("data-index");
+    });
+    $('.delete-modal-btn.approve').html("İPTAL ET");
+    $('.delete-modal-btn.cancel').html("HAYIR");
+    if (chTotalStatusCancel) {
+        document.getElementById("chTotalStatusCancel").addEventListener("click", function (event) {
+            deleteModalText.innerHTML = "Tümü iptal edilsin mi?";
+            deleteModal.style.display = "block";
+            deleteModal.dataset.all = "1";
+        });
+    }  
+    $(".vendor-order-drop-content > button").on("click", function (event) {
+        if (this.dataset.status == "2") {
+            $.ajax({
+                type: "POST",
+                url: "/satici/order/{{order.id}}/prp",
+                data: {
+                    index: this.dataset.index,
+                    csrfmiddlewaretoken: '{{csrf_token}}'
+                },
+                success: function (json) {
+                    location.reload();
+                },
+                error: function (jqxhr, statusMsg, err) {
+                    alert("Hata:"+err);
+                }
+            });
+        }
+        else if (this.dataset.status == "3") {
+            cargoModal.dataset.index = this.dataset.index;
+            cargoModal.style.display = "block";
+        }
+        else if (this.dataset.status == "6") {
+            deleteModalText.innerHTML = "Seçilen ürün iptal edilsin mi?"
+            deleteModal.dataset.index = this.dataset.index;
+            deleteModal.style.display = "block";
+        }
+    });
+    $('.delete-modal-btn.approve').on("click", function (event) {
+        let data = {};
+        if (deleteModal.dataset.all == "1") {
+            data.is_all = "1";
+        }
+        else {
+            data.index = deleteModal.dataset.index;
+        }
+        data.csrfmiddlewaretoken = '{{csrf_token}}';
+        $.ajax({
+            type: "POST",
+            url: "/satici/order/{{order.id}}/rmv",
+            data: data,
+            success: function (json) {
+                location.reload();
+            },
+            error: function (jqxhr, statusMsg, err) {
+                alert("Hata:"+err);
+                deleteModal.style.display = "none";
+            }
+        });
+        deleteModal.removeAttribute("data-all");
+        deleteModal.removeAttribute("data-index");
+    });
+    cargoModalDeliveryURL.addEventListener("keyup", function (event) {
+        if (this.value != "" && this.value != null){
+            cargoModalBtnApprove.disabled = false;
+        }
+        else {
+            cargoModalBtnApprove.disabled = true;
+        }
+    });
+    cargoModalBtnApprove.addEventListener("click", function (event) {
+        if (!checkURL(cargoModalDeliveryURL.value)) {
+            alert("Lütfen geçerli bir URL giriniz.");
+            return;
+        }
+        let data = {};
+        if (cargoModal.dataset.all == "1") {
+            data.is_all = "1";
+        }
+        else {
+            data.index = cargoModal.dataset.index;
+        }
+        data.cargoURL = cargoModalDeliveryURL.value;
+        data.csrfmiddlewaretoken = '{{csrf_token}}';
+        $.ajax({
+            type: "POST",
+            url: "/satici/order/{{order.id}}/cargo",
+            data: data,
+            success: function (json) {
+                location.reload();
+            },
+            error: function (jqxhr, statusMsg, err) {
+                alert("Hata:"+err);
+            }
+        });
+        cargoModal.removeAttribute("data-all");
+        cargoModal.removeAttribute("data-index");
+    });
+    if (chTotalStatusPrepared) {
+        chTotalStatusPrepared.addEventListener("click", function (event) {
+            $.ajax({
+                type: "POST",
+                url: "/satici/order/{{order.id}}/prp",
+                data: {
+                    is_all: "1",
+                    csrfmiddlewaretoken: '{{csrf_token}}'
+                },
+                success: function (json) {
+                    location.reload();
+                },
+                error: function (jqxhr, statusMsg, err) {
+                    alert("Hata:"+err);
+                }
+            });
+        });
+    }
+    if (chTotalStatusCargo) {
+        chTotalStatusCargo.addEventListener("click", function (event) {
+            cargoModal.dataset.all = "1";
+            cargoModal.style.display = "block";
+        });
+    }
+</script>
+{% endblock body_script %}

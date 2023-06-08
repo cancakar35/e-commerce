@@ -1,0 +1,59 @@
+<div class="modal-background" id="addressModal">
+    <div class="address-modal-content">
+        <div class="address-modal-header">
+            <h4 id="modal-header-text">Adres Ekle</h4>
+            <span class="close-modal" id="addressCloseModal">&times;</span>
+        </div>
+        <div class="address-modal-body">
+            <div class="address-form">
+                <form method="POST" action="/profile/address{% if next %}?next={{next}}{% endif %}" name="addressModalForm" onsubmit="return ValidateForm();">
+                    {% csrf_token %}
+                    <div class="mstr-flex-col">
+                        <label for="addressTitle">Adres Başlığı</label>
+                        <input type="text" name="addressTitle" id="addressTitle" autocomplete="off" maxlength="64" placeholder="Ev, İş yeri vb." required>
+                    </div>
+                    <div class="mstr-flex-row mstr-space-between mstr-form-input-row">
+                        <div class="mstr-flex-col">
+                            <label for="addressName">Ad</label>
+                            <input type="text" name="addressName" id="addressName" autocomplete="off" maxlength="70" required>
+                        </div>
+                        <div class="mstr-flex-col">
+                            <label for="addressLastName">Soyad</label>
+                            <input type="text" name="addressLastName" id="addressLastName" autocomplete="off" maxlength="70" required>
+                        </div>
+                    </div>
+                    <div class="mstr-flex-col">
+                        <label for="addressTckn">TCKN</label>
+                        <input type="text" inputmode="numeric" name="tckn" id="addressTckn" maxlength="11" required>
+                    </div>
+                    <div class="mstr-flex-col">
+                        <label for="addressPhone">Telefon</label>
+                        <input type="tel" name="addressPhone" id="address_phone_input" maxlength="19" required>
+                    </div>
+                    <div class="mstr-flex-row mstr-space-between mstr-form-input-row">
+                        <div class="mstr-flex-col" style="width: 100%; margin-right: 10px;">
+                            <label for="addressCity">İl</label>
+                            <input type="text" name="addressCity" id="addressCity" autocomplete="off" maxlength="250" required>
+                        </div>
+                        <div class="mstr-flex-col">
+                            <label for="addressDistrict">İlçe</label>
+                            <input type="text" name="addressDistrict" id="addressDistrict" autocomplete="off" maxlength="250" required>
+                        </div>
+                    </div>
+                    <div class="mstr-flex-col">
+                        <label for="addressNeighbor">Mahalle</label>
+                        <input type="text" name="addressNeighbor" id="addressNeighbor" autocomplete="off" maxlength="250" required>
+                    </div>
+                    <div class="mstr-flex-col">
+                        <label for="addressLine">Adres</label>
+                        <textarea class="addressline-textarea" id="addressLine" name="addressLine" maxlength="250" required></textarea>
+                    </div>
+                    <div class="mstr-flex-col">
+                        <p class="errorMessage" id="errorMessage"></p>
+                    </div>
+                    <button type="submit" id="addressButton" class="profile-form-button" disabled>ADRES EKLE</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

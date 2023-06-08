@@ -1,0 +1,155 @@
+{% extends 'vendorBase.html' %}
+{% load custom_tags %}
+{% load static %}
+{% block title %}{{request.user.vendor_account.CompanyName}} Satıcı Paneli - MyStore{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    <div class="vendor-panel-stats">
+        <div class="vendor-panel-sell-stats">
+            <div class="vendor-stats-header">
+                <div>
+                    <span class="vendor-stats-header-text">Satışlar</span>
+                    <span class="vendor-stats-header-time" id="sellStatTimeText">Bugün</span>
+                </div>
+                <div class="vendor-stats-ch-time">
+                    <button class="vendor-stats-time-btn">
+                        <i class="fa fa-ellipsis"></i>
+                    </button>
+                    <div class="vendor-stats-time-drop">
+                        <button id="sellStatChBugun">Bugün</button>
+                        <button id="sellStatChAy">Bu Ay</button>
+                        <button id="sellStatChYil">Bu Yıl</button>
+                    </div>
+                </div>
+            </div>
+            <div class="vendor-stats-content">
+                <div>
+                    <i class="fa fa-cart-shopping vendor-stats-cart-icon"></i>
+                </div>
+                <div class="vendor-stats-statstext" id="sellStat">{{sells}}</div>
+            </div>
+        </div>
+        <div class="vendor-panel-income-stats">
+            <div class="vendor-stats-header">
+                <div>
+                    <span class="vendor-stats-header-text">Kazanç</span>
+                    <span class="vendor-stats-header-time" id="incomeStatTimeText">Bu Ay</span>
+                </div>
+                <div>
+                    <div class="vendor-stats-ch-time">
+                        <button class="vendor-stats-time-btn">
+                            <i class="fa fa-ellipsis"></i>
+                        </button>
+                        <div class="vendor-stats-time-drop">
+                            <button id="incomeStatBugun">Bugün</button>
+                            <button id="incomeStatAy">Bu Ay</button>
+                            <button id="incomeStatYil">Bu Yıl</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="vendor-stats-content">
+                <i class="fa fa-turkish-lira-sign stats-turkish-lira-sign"></i>
+                <div class="vendor-stats-statstext" id="incomeStat">{{earn|formatDisplayPrice}}</div>
+            </div>
+        </div>
+    </div>
+    <div class="vendor-sales-chart">
+        <canvas id="saleschart"></canvas>
+    </div>
+</div>
+{% endblock content %}
+{% block body_script %}
+<script src="{% static 'js/chart.min.js' %}"></script>
+<script>
+    const sellStatChBugun = document.getElementById("sellStatChBugun");
+    const sellStatChAy = document.getElementById("sellStatChAy");
+    const sellStatChYil = document.getElementById("sellStatChYil");
+    const sellStatTimeText = document.getElementById("sellStatTimeText");
+    const sellStat = document.getElementById("sellStat");
+    const incomeStatBugun = document.getElementById("incomeStatBugun");
+    const incomeStatAy = document.getElementById("incomeStatAy");
+    const incomeStatYil = document.getElementById("incomeStatYil");
+    const incomeStat = document.getElementById("incomeStat");
+    const incomeStatTimeText = document.getElementById("incomeStatTimeText");
+    let chrt = document.getElementById("saleschart").getContext("2d");
+    let chId = new Chart(chrt, {
+        type: "bar",
+        data: {
+            labels: Object.keys({{graph_stat|safe}}),
+            datasets: [{
+                label: "Satılan Ürün",
+                data: Object.values({{graph_stat|safe}}),
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(255, 159, 64, 0.2)',
+                    'rgba(255, 205, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(201, 203, 207, 0.2)',
+                    'rgba(255, 0, 0, 0.2)',
+                    'rgba(0, 255, 0, 0.2)',
+                    'rgba(0, 0, 255, 0.2)',
+                    'rgba(255, 255, 0, 0.2)',
+                    'rgba(128, 0, 128, 0.2)'
+                ],
+                borderColor: [
+                    'rgb(255, 99, 132)',
+                    'rgb(255, 159, 64)',
+                    'rgb(255, 205, 86)',
+                    'rgb(75, 192, 192)',
+                    'rgb(54, 162, 235)',
+                    'rgb(153, 102, 255)',
+                    'rgb(201, 203, 207)',
+                    'rgba(255, 0, 0)',
+                    'rgba(0, 255, 0)',
+                    'rgba(0, 0, 255)',
+                    'rgba(255, 255, 0)',
+                    'rgba(128, 0, 128)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        boxWidth: 0,
+                        font: {
+                            size: 18
+                        }
+                    }
+                }
+            }
+        },
+    });
+
+    sellStatChBugun.addEventListener("click", function (event) {
+        sellStatTimeText.innerHTML = "Bugün";
+        fetch("/satici/panel/stats/sell?q=0").then(response => response.json()).then(data=>{sellStat.innerHTML=data.stat});
+    });
+    sellStatChAy.addEventListener("click", function (event) {
+        sellStatTimeText.innerHTML = "Bu Ay";
+        fetch("/satici/panel/stats/sell?q=1").then(response => response.json()).then(data=>{sellStat.innerHTML=data.stat});
+    });
+    sellStatChYil.addEventListener("click", function (event) {
+        sellStatTimeText.innerHTML = "Bu Yıl";
+        fetch("/satici/panel/stats/sell?q=2").then(response => response.json()).then(data=>{sellStat.innerHTML=data.stat});
+    });
+    incomeStatBugun.addEventListener("click", function (event) {
+        incomeStatTimeText.innerHTML = "Bugün";
+        fetch("/satici/panel/stats/inc?q=0").then(response => response.json()).then(data=>{incomeStat.innerHTML=formatDisplayPrice(data.stat)});
+    });
+    incomeStatAy.addEventListener("click", function (event) {
+        incomeStatTimeText.innerHTML = "Bu Ay";
+        fetch("/satici/panel/stats/inc?q=1").then(response => response.json()).then(data=>{incomeStat.innerHTML=formatDisplayPrice(data.stat)});
+    });
+    incomeStatYil.addEventListener("click", function (event) {
+        incomeStatTimeText.innerHTML = "Bu Yıl";
+        fetch("/satici/panel/stats/inc?q=2").then(response => response.json()).then(data=>{incomeStat.innerHTML=formatDisplayPrice(data.stat)});
+    });
+</script>
+{% endblock body_script %}

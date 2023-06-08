@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Ana Sayfa - MyStore{% endblock title %}
+{% block body_header %}{% include "categoryNav.html" %}{% endblock body_header %}
+{% block content %}
+<div class="mstr-container">
+    <div class="mstr-grid-row mstr-mt-20">
+        {% for product in page %}
+            {% if product.product_vendors.exists %}
+            {% include "productCard.html" with product=product %}
+            {% endif %}
+        {% empty %}
+            <h2>Satışta Ürün Yok!</h2>
+        {% endfor %}
+    </div>
+    {% if page.has_other_pages %}
+    <div class="pagination-container">
+        <div class="pagination">
+            {% for page_num in page.paginator.get_elided_page_range %}
+                {% if page_num == page.paginator.ELLIPSIS %}
+                {{page_num}}
+                {% else %}
+                <a href="?page={{page_num}}" {% if page_num == page.number %}class="pagination-currentpage"{% endif %}>{{page_num}}</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock content %}

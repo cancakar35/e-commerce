@@ -1,0 +1,354 @@
+{% extends "base.html" %}
+{% load custom_tags %}
+{% block title %}{{product.title}} - MyStore{% endblock title %}
+{% block body_header %}{% include "categoryNav.html" %}{% endblock body_header %}
+{% block content %}
+    <div class="mstr-container">
+        {% include "breadcrumb.html" with page=product %}  
+        <div class="product-detail-flex">
+            <div class="product-detail-gallery">
+                <div class="product-detail-gallery-big-img">
+                    <img src={{product.get_first_image.image.url}} id="hero-img" class="prd-hero-img" alt="{{product.title}}">
+                    <div class="product-detail-image-zoom" id="img-zoom-result"></div>
+                </div>
+                <div class="product-detail-gallery-images">
+                    {% for image in product.get_images %}
+                    <div class="small-img">
+                        <img src="{{image.image.url}}" alt="{{product.title}}"
+                        {% if image.is_first %}class="selected-img"{% endif %}
+                        onclick="imageChange(this);"
+                        >
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="product-detail-content">
+                <h4 class="product-title">{{product.brand}} {{product.title}}</h4>
+                <p>{{ product.desc }}</p>
+                {% for spec in product.get_specifications %}
+                    <div class="product-detail-specs">
+                        <span>{{spec.title}}</span>
+                        {% for specvalue in spec.get_spec_values %}
+                            <label for="{{spec.title}}-{{specvalue.value}}">
+                                <input type="radio" name="{{spec.title}}" value="{{specvalue.value}}" id="{{spec.title}}-{{specvalue.value}}"{% if specvalue.value in request.GET.specs %}checked{% endif %}>
+                                <span>{{specvalue.value}}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+                <div class="product-detail-quantity">
+                    <span>Adet:</span>
+                    <input type="number" id="amount" min="1" max="30" value="1">
+                </div>
+                <div>
+                    <span>Satıcı:</span>
+                    <span id="vendorCompanyName">{{prdVendor.vendor.CompanyName}}</span>
+                </div>
+                <div class="price-div">
+                    <div class="product-detail-disc" id="product-detail-disc">
+                        <i class="fa-solid fa-caret-down"></i>
+                        <span class="disc-percent" id="discountInfo"></span>
+                    </div>
+                    <span class="final-price" id="final-price"></span>
+                    <span class="total-price" id="total-price"></span>
+                </div>
+                <div class="mstr-flex-row product-detail-button-group">
+                    <button class="mstr-btn mstr-btn-primary product-detail-btn-cart" id="add-cart" data-vendor="{{prdVendor.vendor.id}}">
+                        <i class="fa fa-cart-shopping"></i>
+                        <span>Sepete Ekle</span>
+                    </button>
+                    {% if request.user.is_authenticated and request.user.is_user %}
+                    <button class="product-detail-fav-btn" id="add-fav">
+                        <i class="add-fav-icon {% if is_fav %}fa-solid{% else %}fa-regular{% endif %} fa-heart"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <h3>Tüm Satıcılar</h3>
+        <div class="product-detail-vendors-container">
+            {% for vnd in product.get_vendor_list %}
+            <a href="?vendor={{vnd.vendor.id}}" class="product-detail-vendor">
+                <div>{{vnd.vendor.CompanyName}}</div>
+                <div>{{vnd.get_final_price|formatDisplayPrice}} TL</div>
+            </a>
+            {% endfor %}
+        </div>
+        <h3>Değerlendirmeler ({{comments|length}})</h3>
+        <div class="product-detail-comments-container">
+            {% if comments %}
+            {% for comment in comments|slice:":10" %}
+            <div class="product-detail-comment-section">
+                <div class="product-detail-rating">
+                    <div class="product-detail-stars">
+                        {% for i in comment.get_pos_rating %}
+                        <i class="fa-solid fa-star"></i>
+                        {% endfor %}
+                        {% for i in comment.get_neg_rating %}
+                        <i class="fa-regular fa-star"></i>
+                        {% endfor %}
+                    </div>
+                    <div>{{comment.comment}}</div>
+                </div>
+                <div class="product-detail-rating-info">
+                    <span>{{comment.get_masked_user_name}}</span>
+                    <span>{{comment.created_at}}</span>
+                    <span>{{comment.vendor.CompanyName}}</span>
+                    {% if comment.order.specs %}<span>{{comment.order.get_specs_text}}</span>{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            {% if comments|length > 10 %}
+            <button class="product-detail-all-comments-btn" id="commentsModalShowBtn">TÜM DEĞERLENDİRMELERİ GÖSTER</button>
+            {% endif %}
+            {% else %}
+            <div class="product-detail-comments-empty">
+                <i class="fa-solid fa-star"></i>
+                <span>Henüz Değerlendirme Yapılmamış</span>
+            </div>
+            {% endif %}
+        </div>
+        {% if comments|length > 10 %}
+        <div class="modal-background comments-modal" id="commentsModal">
+            <div class="comments-modal-content">
+                <div class="comments-modal-header">
+                    <h4>Tüm Değerlendirmeler</h4>
+                    <span class="close-modal" id="commentsModalClose">&times;</span>
+                </div>
+                <div class="comments-modal-body">
+                    {% for comment in comments %}
+                    <div class="product-detail-comment-section">
+                        <div class="product-detail-rating">
+                            <div class="product-detail-stars">
+                                {% for i in comment.get_pos_rating %}
+                                <i class="fa-solid fa-star"></i>
+                                {% endfor %}
+                                {% for i in comment.get_neg_rating %}
+                                <i class="fa-regular fa-star"></i>
+                                {% endfor %}
+                            </div>
+                            <div>{{comment.comment}}</div>
+                        </div>
+                        <div class="product-detail-rating-info">
+                            <span>{{comment.get_masked_user_name}}</span>
+                            <span>{{comment.created_at}}</span>
+                            <span>{{comment.vendor.CompanyName}}</span>
+                            {% if comment.order.specs %}<span>{{comment.order.get_specs_text}}</span>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+{% endblock content %}
+{% block body_script %}
+<script>
+    const amountElement = document.getElementById('amount');
+    const specDivs = document.getElementsByClassName("product-detail-specs");
+    const addCartBtn = document.getElementById("add-cart");
+    const vendorCompanyName = document.getElementById("vendorCompanyName");
+    const finalPrice = document.getElementById("final-price");
+    const totalPrice = document.getElementById('total-price');
+    const discountInfo = document.getElementById("discountInfo");
+    const discountDiv = document.getElementById("product-detail-disc");
+    let prPrice = "{{prdVendor.get_final_price|safe}}";
+    let prOldPrice = "{{prdVendor.price}}";
+    const bigimg = document.getElementById("hero-img");
+    const zoomimg = document.getElementById("img-zoom-result");
+    amountElement.addEventListener('change',(event)=>{
+        if (amountElement.value == '' || amountElement.value < 1 || amountElement.value > 30)
+        {
+            amountElement.value = 1;
+        }
+        document.getElementById('final-price').innerHTML = formatDisplayPrice((parseFloat(prPrice)*amountElement.value).toFixed(2)) + " TL";
+        if (totalPrice) {
+            totalPrice.innerHTML = formatDisplayPrice((parseFloat(prOldPrice)*amountElement.value).toFixed(2)) + " TL";
+        }
+    });
+    zoomimg.style.backgroundImage = "url('"+bigimg.src+"')";
+    zoomimg.style.backgroundSize = (bigimg.width*7.5)+"px "+(bigimg.height*7.5)+"px";
+    let cx = 7.5;
+    bigimg.addEventListener("mousemove", function (event) {
+        event.preventDefault();
+        let a, x=0, y=0;
+        a = bigimg.getBoundingClientRect();
+        x = event.pageX - a.left;
+        y = event.pageY - a.top;
+        x -= window.pageXOffset;
+        y-= window.pageYOffset;
+        pos = {x:x, y:y};
+        zoomimg.style.backgroundPosition = "-"+(x*7.5)+"px -"+(y*7.5)+"px";
+    });
+    function imageChange(selectedImg){
+        let hero = document.getElementById("hero-img");
+        let borderThumb = document.querySelector(".small-img > .selected-img")
+        hero.src = selectedImg.src;
+        hero.alt = selectedImg.alt;
+        borderThumb.classList.remove("selected-img");
+        selectedImg.classList.add("selected-img");
+    }
+
+    finalPrice.innerHTML = formatDisplayPrice(parseFloat("{{prdVendor.get_final_price|safe}}").toFixed(2)) + " TL";
+    {% if prdVendor.discount %}
+    totalPrice.innerHTML = formatDisplayPrice(parseFloat("{{prdVendor.price|safe}}").toFixed(2)) + " TL";
+    totalPrice.style.display = "inline-block";
+    discountDiv.style.display = "block";
+    discountInfo.innerHTML = "{{prdVendor.discount.get_display_percent}}";
+    {% endif %}
+    if (specDivs.length > 0)
+    {
+        $("input[type='radio']").on("change", function (event) {
+            if (document.querySelectorAll("input[type='radio']:checked").length == specDivs.length){
+                let specs = [];
+                for (const x of document.querySelectorAll("input[type='radio']:checked")) {
+                    specs.push(x.value);
+                }
+                fetch("{{product.get_absolute_url}}/chkstock?specs="+encodeURIComponent(specs.join("-")))
+                    .then(response=>response.json())
+                    .then(data=>{
+                        if (data.nostock) {
+                            addCartBtn.disabled = true;
+                            alert("Seçtiğiniz özellikler için ürün stoğu kalmamıştır.")
+                        }
+                        else {
+                            addCartBtn.disabled = false;
+                            selectedVendor = new URLSearchParams(location.search).get("vendor");
+                            if (selectedVendor){
+                                if (!data.vendors.includes(selectedVendor)) {
+                                    history.replaceState(null,'',location.pathname);
+                                    addCartBtn.dataset.vendor = data.best_vendor_id;
+                                    vendorCompanyName.innerHTML = data.bestvendor;
+                                    finalPrice.innerHTML = formatDisplayPrice(data.bestprice)+" TL";
+                                    if (data.best_vendor_disc){
+                                        totalPrice.innerHTML = formatDisplayPrice(data.best_total_price)+" TL";
+                                        discountInfo.innerHTML = data.best_vendor_disc;
+                                        discountDiv.style.display = "block";
+                                        totalPrice.style.display = "inline-block";
+                                    }
+                                    else {
+                                        discountDiv.style.display = "none";
+                                        totalPrice.style.display = "none";
+                                    }
+                                }
+                            }
+                            else {
+                                addCartBtn.dataset.vendor = data.best_vendor_id;
+                                vendorCompanyName.innerHTML = data.bestvendor;
+                                finalPrice.innerHTML = formatDisplayPrice(data.bestprice)+" TL";
+                                if (data.best_vendor_disc){
+                                    totalPrice.innerHTML = formatDisplayPrice(data.best_total_price)+" TL";
+                                    discountInfo.innerHTML = data.best_vendor_disc;
+                                    discountDiv.style.display = "block";
+                                    totalPrice.style.display = "inline-block";
+                                }
+                                else {
+                                    discountDiv.style.display = "none";
+                                    totalPrice.style.display = "none";
+                                }
+                            }
+                        }
+                    });
+            }
+        });
+    }
+    addCartBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        let cartBtn = document.getElementById('add-cart');
+        cartBtn.innerHTML = "...";
+        if (specDivs.length > 0 && document.querySelectorAll(".product-detail-specs input[type='radio']:checked").length < specDivs.length){
+            $(".product-detail-specs:not(:has(input:checked)) label:first-of-type input[type='radio']").prop('checked', true);
+        }
+        let specs = document.querySelectorAll(".product-detail-specs input[type='radio']:checked");
+        let selectedSpecs = {};
+        for (const s of specs) {
+            selectedSpecs[s.name] = s.value;
+        }
+        $.ajax({
+            type: 'POST',
+            url: '/cart/add',
+            data: {
+                product_id: "{{product.id}}",
+                quantity: amountElement.value,
+                vendor: this.dataset.vendor,
+                productspecs: JSON.stringify(selectedSpecs),
+                csrfmiddlewaretoken: "{{csrf_token}}"
+            },
+            success: function (json) {
+                if (json.status == "success"){
+                    cartBtn.innerHTML = "Sepete Eklendi (" + json.quantity + ")";
+                }
+                else{
+                    cartBtn.innerHTML = "Yeterli Stok Yok"
+                }
+            } ,
+            error: function (xhr, errmsg, err) {
+                cartBtn.innerHTML = "Yeterli Stok Yok";
+            }
+        });
+    });
+    {% if request.user.is_authenticated and request.user.is_user %}
+    document.getElementById("add-fav").addEventListener("click", function (event) {
+        let heartIcon = this.firstElementChild;
+        if (heartIcon.classList.contains("fa-regular")){
+            heartIcon.classList.remove("fa-regular");
+            heartIcon.classList.add("fa-solid");
+            heartIcon.style.transform = "scale(1.5)";
+            setTimeout(()=>{
+                heartIcon.style.transform = "scale(1)";
+            },500);
+            $.ajax({
+                type: "POST",
+                url: "/profile/favs/add",
+                data: {
+                    product: "{{product.id}}",
+                    csrfmiddlewaretoken: "{{csrf_token}}"
+                },
+                success: function () {},
+                error: function (xhr, errmsg, err) {
+                    heartIcon.classList.remove("fa-solid");
+                    heartIcon.classList.add("fa-regular");
+                    alert("Ürün favorilere eklenemedi!");
+                }
+            });
+        }
+        else{
+            heartIcon.style.transform = "scale(1.5)";
+            setTimeout(()=>{
+                heartIcon.style.transform = "scale(1)";
+            },500);
+            heartIcon.classList.remove("fa-solid");
+            heartIcon.classList.add("fa-regular");
+            $.ajax({
+                type: "POST",
+                url: "/profile/favs/rmv",
+                data: {
+                    product: "{{product.id}}",
+                    csrfmiddlewaretoken: "{{csrf_token}}"
+                },
+                success: function () {},
+                error: function (xhr, errmsg, err) {
+                    heartIcon.classList.remove("fa-regular");
+                    heartIcon.classList.add("fa-solid");
+                    alert("Ürün favorilerden kaldırılamadı!");
+                }
+            });
+        }
+    });
+    {% endif %}
+    {% if comments|length > 10 %}
+    const commentsModalShowBtn = document.getElementById("commentsModalShowBtn");
+    const commentsModal = document.getElementById("commentsModal");
+    const commentsModalClose = document.getElementById("commentsModalClose");
+    commentsModalShowBtn.addEventListener("click", function (event) {
+        document.body.style.overflow = "hidden";
+        commentsModal.style.display = "block";
+    });
+    commentsModalClose.addEventListener("click", function (event) {
+        document.body.style.overflow = "auto";
+        commentsModal.style.display = "none";
+    });
+    {% endif %}
+</script>
+{% endblock body_script %}

@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% load custom_tags %}
+{% block title %}Sepetim - MyStore{% endblock title %}
+{% block content %}
+    <div class="mstr-container">
+        {% if cart %}
+        <div class="cart-flex">
+          <div class="cart-content">
+            <div class="cart-header">
+              <h1>Sepetim (<span id="cart-header-qty">{{cart|length}}</span> Ürün)</h1>
+              <button class="cart-remove-all">Sepeti Boşalt</button>
+            </div>
+            {% for group, values in cart.get_items_vendor_group.items %}
+              <div class="cart-vendor-box">
+                <div class="vendor-header">
+                  <div class="vendor-info">
+                    <div>Satıcı:</div>
+                    <a href="#" class="vendor-company">{{values.0.vendorName}}</a>
+                  </div>
+                </div>
+                {% for item in values %}
+                  <div class="cart-item-wrapper" data-index="{{item.item_id}}">
+                    <div class="cart-item">
+                      <div class="cart-image">
+                        {% with item.product.get_first_image as first_image %}
+                        <img src="{{first_image.image.url|safe}}" alt="{{first_image.alt_text|safe}}">
+                        {% endwith %}
+                      </div>
+                      <a href="{{item.product.get_absolute_url}}?vendor={{item.vendor}}{% if item.specs %}&specs={{item.specs.values|join:'-'}}{% endif %}" class="cart-item-details">
+                        <p class="cart-item-title">{{item.product.brand}} {{item.product.title}}</p>
+                        <div class="cart-items-specs">
+                          {% for spec, value in item.specs.items %}
+                            <div>{{spec}} : {{value}}</div>
+                          {% endfor %}
+                        </div>
+                      </a>
+                      <div class="cart-item-actions">
+                        <div class="cart-item-counter" data-index="{{item.item_id}}">
+                          <button class="counterButton counterBtnMinus">
+                            <i class="fa fa-minus"></i>
+                          </button>
+                          <div class="counterQty">{{item.quantity}}</div>
+                          <button class="counterButton counterBtnPlus">
+                            <i class="fa fa-plus"></i>
+                          </button>
+                        </div>
+                        <div class="cart-item-price cart-price-display">
+                          {{item.total_price|formatDisplayPrice}} TL
+                        </div>
+                        <button class="remove-item" data-index="{{item.item_id}}">
+                          <i class="fa fa-trash-can"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+              
+            {% endfor %}
+            </div>
+            <div class="cart-totals-sticky">
+              <div class="cart-summary">
+                <div class="cart-totals">
+                  <h1>Sipariş Özeti</h1>
+                  <div class="total-item">
+                    <span>Alt Toplam:</span>
+                    <span id="subtotal-price" class="cart-price-display">{{cart.get_total_cost|formatDisplayPrice}} TL</span>
+                  </div>
+                  <div class="total-item">
+                    <span>Kargo</span>
+                    <span id="delivery-price" class="cart-price-display">0,00 TL</span>
+                  </div>
+                  <hr>
+                  <div class="total-item">
+                    <span>Toplam</span>
+                    <span id="cart-final-price" class="cart-price-display">{{cart.get_total_cost|formatDisplayPrice}} TL</span>
+                  </div>
+                </div>
+                <a href="/checkout" class="cart-btn-approve">SEPETİ ONAYLA</a>
+              </div>
+            </div>
+          {% include "deleteModal.html" %}
+        </div>
+        {% endif %}
+        <div class="cart-empty" id="cartEmpty">
+          <i class="fa fa-cart-shopping"></i>
+          <h3>Sepetinizde ürün bulunmamaktadır.</h3>
+          <a href="/" class="mstr-btn mstr-btn-primary">Alışverişe Başla</a>
+        </div>
+    </div>
+{% endblock content %}
+{% block body_script %}
+<script>
+  let emptyCart = document.getElementById('cartEmpty');
+  let deleteModal = document.getElementById("deleteModal");
+  let deleteModalText = document.getElementById('deleteModalText');
+  if (document.getElementsByClassName("cart-flex").length == 0) {
+    emptyCart.style.display = "block";
+  }
+  $('.cart-item-counter .counterQty').filter(function(index){return $(this).html() <= 1}).siblings('.counterBtnMinus').prop('disabled', true);
+  $('.delete-modal-btn.cancel').on('click', function() {
+    deleteModal.style.display = 'none';
+  });
+  $('.delete-modal-btn.approve').on('click', function () {
+    let itemId = deleteModal.dataset.index;
+    $.ajax({
+      type: 'POST',
+      url: '/cart/rmv',
+      data: {
+        item_id: itemId,
+        csrfmiddlewaretoken: '{{csrf_token}}'
+      },
+      success: function (json){
+        deleteModal.style.display = 'none';
+        $('.cart-item-wrapper[data-index="' + itemId + '"]').remove();
+        document.getElementById("subtotal-price").innerHTML = formatDisplayPrice(json.total_price) + " TL";
+        document.getElementById("cart-final-price").innerHTML = formatDisplayPrice(json.total_price) + " TL";
+        if (json.quantity > 0){
+          document.getElementById("cart-header-qty").innerHTML = json.quantity;
+          $('.cart-vendor-box:not(:has(.cart-item-wrapper))').remove();
+        }
+        else{
+          $('.cart-flex').remove();
+          emptyCart.style.display = "block";
+        }
+      },
+      error: function (jqxhr, statusMsg, err) {
+        deleteModal.style.display = 'none';
+      }
+    });
+  });
+  $('.remove-item').on('click', function (event){
+    deleteModal.dataset.index = $(this).data("index");
+    deleteModalText.innerHTML = $(this).closest(".cart-item-wrapper").find(".cart-item-title").text() + " ürününü sepetinizden kaldırmak istiyor musunuz?"
+    deleteModal.style.display = 'block';
+  });
+
+  
+
+  $('button.cart-remove-all').on('click', function(event){
+    event.preventDefault();
+    $.ajax({
+      type: 'POST',
+      url: '/cart/clr',
+      data: {
+        csrfmiddlewaretoken: '{{csrf_token}}'
+      },
+      success: function (json){
+        $('.cart-flex').remove();
+        emptyCart.style.display = "block";
+      },
+      error: function (jqxhr, statusMsg, err) {}
+    });
+  });
+
+  function updateQty(itemId, qty){
+    if (qty === null){
+      return false;
+    }
+    
+    $.ajax({
+      type: 'POST',
+      url: '/cart/upd',
+      data: {
+        item_id: itemId,
+        quantity: qty,
+        csrfmiddlewaretoken: '{{csrf_token}}'
+      },
+      success: function (json){
+        if (json.status == "success") {
+          let cntQty = $('.cart-item-counter[data-index="' + itemId + '"] .counterQty');
+          document.getElementById("cart-header-qty").innerHTML = json.quantity;
+          cntQty.html(json.quantity_item);
+          if(cntQty.html() <= 1){
+            cntQty.siblings('.counterBtnMinus').prop('disabled', true);
+          }
+          else{
+            cntQty.siblings('.counterBtnMinus').prop('disabled', false);
+          }
+          $('.cart-item-wrapper[data-index="' + itemId + '"] .cart-item-price').html(formatDisplayPrice(json.item_total_price) + " TL");
+          document.getElementById("subtotal-price").innerHTML = formatDisplayPrice(json.total_price) + " TL";
+          document.getElementById("cart-final-price").innerHTML = formatDisplayPrice(json.total_price) + "TL";
+        }
+      },
+      error: function (jqxhr, statusMsg, err) {}
+    });
+  }
+
+  $('button.counterBtnPlus').on('click', function(event){
+    event.preventDefault();
+    let itemId = $(this).parent().data('index');
+    let counterQtyValue = parseInt($(this).siblings('.counterQty').html());
+    updateQty(itemId, counterQtyValue+1);
+  });
+
+  $('button.counterBtnMinus').on('click', function(event){
+    event.preventDefault();
+    let itemId = $(this).parent().data('index');
+    let counterQtyValue = parseInt($(this).siblings('.counterQty').html());
+    updateQty(itemId, counterQtyValue-1);
+  });
+</script>
+{% endblock body_script %}

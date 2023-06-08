@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Kayıt Ol - MyStore{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+	<div class="login-form-div">
+		<h1>Kayıt Ol</h1>
+		<div id="errorsDiv">
+			<p class="errorMessage" id="errorMessage"></p>
+		</div>
+		<form method="POST" class="login-form" onsubmit="return ValidateForm();">
+			{% csrf_token %}
+			<label for="id_email">Email</label>
+			{{form.email}}
+			<div class="mstr-flex-row mstr-space-between mstr-form-input-row">
+				<div class="mstr-flex-col">
+					<label for="id_name" style="text-align: left;">Ad</label>
+					{{form.name}}
+				</div>
+				<div class="mstr-flex-col">
+					<label for="id_lastname" style="text-align: left;">Soyad</label>
+					{{form.lastname}}
+				</div>
+			</div>
+			<label for="id_phone">Telefon Numarası</label>
+			{{form.phone}}
+			<div class="reg-form-dob">
+				<label>Doğum Tarihi</label>
+				<div>{{form.dob}}</div>
+			</div>
+			<label for="id_password">Şifre</label>
+			{{form.password}}
+			<button class="mstr-btn mstr-btn-primary form-sbmt-button" type="submit">KAYIT OL</button>
+			<p class="contract-info">Kayıt Ol'a basarak üyelik koşullarını kabul ediyorum.</p>
+		</form>
+		<p class="">Zaten hesabınız varsa, <a href="/login{% if request.GET.next %}?next={{request.GET.next}}{% endif %}">Giriş Yap</a></p>
+	</div>
+</div>
+{% endblock content %}
+
+{% block body_script %}
+<script>
+	let phone_input = document.getElementById("id_phone");
+	let errorMessage = document.getElementById("errorMessage")
+	let errorsDiv = document.getElementById("errorsDiv");
+	let errorp;
+	phone_input.addEventListener('keydown', enforceFormat);
+	phone_input.addEventListener("change", (event)=>{
+		if (!checkPhoneNumber(phone_input.value) && phone_input.value != ""){
+			phone_input.classList.add("error-input");
+			errorMessage.innerHTML = "Lütfen geçerli bir telefon numarası giriniz!";
+			errorMessage.style.display = "inline-block";
+	}
+		else{
+			phone_input.classList.remove("error-input");
+			errorMessage.innerHTML = "";
+			errorMessage.style.display = "none";
+		}
+	});
+
+	function ValidateForm() {
+		let email = document.getElementById("id_email").value;
+		let name = document.getElementById("id_name").value;
+		let lastname = document.getElementById("id_lastname").value;
+		let phone = document.getElementById("id_phone").value;
+		let password = document.getElementById("id_password").value;
+		if (email == "" || name == "" || lastname == "" || phone == "" || password == "" || !checkPhoneNumber(phone)){
+			return false;
+		}
+		if (password.length < 8)
+		{
+			errorMessage.innerHTML = "Parolanız en az 8 karakter içermelidir.";
+			errorMessage.style.display = "inline-block";
+			return false;
+		}
+		return true;
+
+	}
+
+	{% if form.errors %}
+	errorsDiv.style.display = "inline-block";
+	let errors = JSON.parse('{{form.errors.as_json|safe}}');
+	for (let i in errors){
+		errorp = document.createElement('p');
+		errorp.innerHTML = errors[i][0]['message'];
+		errorp.classList.add("errorMessage");
+		errorp.style.display = "inline-block";
+		errorsDiv.appendChild(errorp);
+	}
+	{% endif %}
+	
+</script>
+{% endblock body_script %}

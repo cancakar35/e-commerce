@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load custom_tags %}
+{% block title %}Favoriler - MyStore{% endblock title %}
+{% block content %}
+<div class="mstr-container">
+    {% if favs %}
+    <div class="user-favs-container">
+        {% for fav in favs %}
+        <div class="user-fav-item">
+            <div class="fav-item-image">
+                <img src="{{fav.product.get_first_image.image.url}}">
+            </div>
+            <a href="{{fav.product.get_absolute_url}}" class="fav-item-details">
+                {{fav.product.brand}} {{fav.product.title}}
+            </a>
+            <div class="fav-item-price">{{fav.product.get_vendor_list.0.get_final_price|formatDisplayPrice}} TL</div>
+            <button class="mstr-btn mstr-btn-primary">Sepete Ekle</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="fav-empty">
+        <i class="fa-solid fa-heart-crack"></i>
+        <h3>Favorilerinizde ürün bulunmuyor</h3>
+    </div>
+    {% endif %}
+</div>
+{% endblock content %}

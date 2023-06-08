@@ -1,0 +1,50 @@
+<nav class="mstr-vendor-navbar">
+    <div class="mstr-nav-left">
+        <a class="mstr-vendor-nav-brand" href="/satici">MyStore Satıcı Paneli</a>
+        {% if request.user.is_authenticated and request.user.is_vendor %}
+            <div class="mstr-nav-dropdown">
+                <button class="nav-drop-btn mstr-vendor-nav-btn">
+                    <span>ÜRÜN</span>
+                </button>
+                <div class="nav-drop-content">
+                    <a href="/satici/product/list">Ürün Listesi</a>
+                    <a href="/satici/product/add">Ürün Ekle</a>
+                    <a href="/satici/product/sell">Ürün Kataloğundan Ekle</a>
+                </div>
+            </div>
+            <div class="mstr-nav-dropdown">
+                <button class="nav-drop-btn mstr-vendor-nav-btn">
+                    <span>ÖDEME</span>
+                </button>
+                <div class="nav-drop-content">
+                    <a href="/satici/pay">Ödeme İşlemleri</a>
+                </div>
+            </div>
+            <div class="mstr-nav-dropdown">
+                <button class="nav-drop-btn mstr-vendor-nav-btn">
+                    <span>SİPARİŞ</span>
+                </button>
+                <div class="nav-drop-content">
+                    <a href="/satici/orders">Tüm Siparişler</a>
+                    <a href="/satici/orders?filtre=3">Kargo Aşamasındakiler</a>
+                    <a href="/satici/orders?filtre=5">İade Edilenler</a>
+                    <a href="/satici/orders?filtre=6">İptal Edilenler</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    <div class="mstr-nav-right">
+        {% if request.user.is_authenticated and request.user.is_vendor %}
+        <div class="mstr-nav-dropdown">
+            <button class="nav-drop-btn mstr-btn mstr-btn-primary">
+                <i class="fa-solid fa-shop"></i>
+                <span>&nbsp{{request.user.vendor_account.CompanyName}}</span>
+            </button>
+            <div class="nav-drop-content">
+                <a href="/satici/profile"><i class="fa-solid fa-shop"></i>&nbsp Mağaza Bilgileri</a>
+                <a href="/satici/logout"><i class="fa fa-arrow-right-from-bracket fa-fw"></i>&nbsp Çıkış Yap</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</nav>
